@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Runners - {{ block.super }}{% endblock %}
+{% block main_content %}
+  {% if runners_list %}
+    <table border=1>
+      <tr>
+	<th>Name</th>
+	<th>Address</th>
+	<th>City</th>
+	<th>Home Phone</th>
+	<th>Mobile Phone</th>
+	<th>Email</th>
+      </tr>
+    {% for runner in runners_list %}
+        <tr>
+	  <td><a href="/runner/{{ runner.id }}/">
+	      {{ runner.first_name }} {{runner.sur_name}}</td>
+	  <td>{{ runner.address }}</td>
+	  <td>{{ runner.address.city }}</td>
+	  <td>{{ runner.phone }}</td>
+	  <td>{{ runner.mobile }}</td>
+	  <td>{{ runner.email }}</td>
+	</tr>
+    {% endfor %}
+    </table>
+  {% else %}
+    <p>No Runners have been created.</p>
+  {% endif %}
+{% endblock %}

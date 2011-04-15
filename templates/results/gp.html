@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Races - {{ block.super }}{% endblock %}
+{% block main_content %}
+{% if races %}
+{% for r in races %}
+{{ r.results }}
+{% endfor %}
+{{ races }}
+{% endif %}
+{% endblock %}

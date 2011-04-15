@@ -1,0 +1,8 @@
+{% if city %}
+  <ul>
+    <li>City: {{ city.city }} </li>
+    <li>State: {{ city.state }} </li>
+    <li>Zip Code: {{ city.zipcode }} </li>
+    <li>Location: <a href="http://maps.google.com/maps?q={{ city.latitude }} {{ city.longitude }}">{{ city.latitude }} {{ city.longitude }}</a></li>
+  </ul>
+{% endif %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Races - {{ block.super }}{% endblock %}
+{% block main_content %}
+{% if races %}
+<hr id="top"\>
+<h3>Races</h3>
+<p>These are the races on this page:</p>
+  <ol>
+{% for race in races %}
+{% if race.results.count %}
+    <li>{{ race.name }} on <a href="#{{ race.pk }}">{{ race.date|date:"l, F jS" }}.</a></li>
+{% endif %}
+{% endfor %}
+  </ol>
+{% for race in races %}
+<hr \>
+<table id="{{ race.pk }}">
+  <tr>
+    <td><a href="{{ race.url }}">{{ race.name }}</a>, run in
+      	{{ race.city.city }}, {{ race.city.state }}</li> on {{ race.date|date:"l, F jS" }}.
+      </td>
+  <tr>
+    <td>{{ race.results.count }} GNBTC runners, with a total of
+      {{ race.finishers|intcomma }} finishers ran the {{ race.distance }} {{ race.measure }}.
+  </tr>
+</table>
+{% if race.results %}
+<table width="75%">
+  <tr>
+    <th align="left">Name</th>
+    <th align="left">Time</th>
+    <th align="left">Pace</th>
+    <th align="left">Place</th>
+  </tr>
+{% for athlete in race.results %}
+  <tr style="{% cycle 'background-color: #FFCCCC; color: black;' 'background-color: #99CCCC; color: black;' %}">
+    <td>{{ athlete.runner.first_name }} {{ athlete.runner.sur_name }}</td>
+    <td>{{ athlete.race_time }}</td>
+    <td>{{ athlete.pace_per_mile }}/mile</td>
+    <td>{{ athlete.place|intcomma }}</td>
+  </tr>
+{% endfor %}
+</table>
+<a href="#top">back to top of page...</a>    
+{% endif %}  
+{% endfor %}
+{% endif %}
+{% endblock %}

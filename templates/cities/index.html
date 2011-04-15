@@ -1,0 +1,11 @@
+{% if cities_list %}
+    <ul>
+    {% for city in cities_list %}
+        <li>
+	  <a href="/city/{{ city.id }}/">{{ city.city }} {{ city.state}} {{ city.zipcode }}
+	</a></li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No Cities have been created.</p>
+{% endif %}

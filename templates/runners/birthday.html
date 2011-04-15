@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Runners Birthdays - {{ block.super }}{% endblock %}
+{% block main_content %}
+{% if bdays %}
+<table>
+  <tr>
+    <th align="left">Name</th>
+    <th align="left">Day</th>
+  </tr>
+{% for bd in bdays %}
+  <tr style="{% cycle 'background-color: #FFCCCC; color: black;' 'background-color: #99CCCC; color: black;' %}">
+    <td>{{ bd }}</td>
+    <td>{{ bd.dob|date:"F jS" }}</td>
+  </tr>
+{% endfor %}
+</table>  
+{% endif %}
+{% endblock %}
