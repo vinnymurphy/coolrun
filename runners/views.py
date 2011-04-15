@@ -39,12 +39,16 @@ def index(request):
     return HttpResponse("Hello, world. You're at the poll index.")
 
 def birthday_month(request, mm):
-  bdays = Runner.objects.all().filter(dob__month=mm)
-  people_by_day = [(person.dob.day, person) for person in bdays]
-  people_by_day.sort()
-  p = [ person_by_day[1] for person_by_day in people_by_day ]
-  return render_to_response('runners/birthday.html',
-                            {'bdays': p})
+    '''We sort the list by day number instead of date sort, which
+    gives the oldest person first.  The trick is to create the day
+    first, then the object, sort it, and then put the object back in
+    day order.'''
+    bdays = Runner.objects.all().filter(dob__month=mm)
+    people_by_day = [(person.dob.day, person) for person in bdays]
+    people_by_day.sort()
+    p = [ person_by_day[1] for person_by_day in people_by_day ]
+    return render_to_response('runners/birthday.html',
+                              {'bdays': p})
 
 def runners(request):
     runners_list = Runner.objects.all().order_by('sur_name',
@@ -75,51 +79,50 @@ def city(request, city_id):
     return render_to_response('cities/detail.html', {'city': c})
 
 def create(request):
-  form = RunnerForm(request.POST or None)
-  if form.is_valid():
-    event = form.save(commit=False)
-    event.save()
-    if 'next' in request.POST:
-      next = request.POST['next']
-    else:
-      next = reverse('runner_create')
-    return HttpResponseRedirect(next)
-  return render_to_response(
-    'runners/create.html',
-    { 'form': form},
-    context_instance = RequestContext(request),
-    )
+    form = RunnerForm(request.POST or None)
+    if form.is_valid():
+        event = form.save(commit=False)
+        event.save()
+        if 'next' in request.POST:
+            next = request.POST['next']
+        else:
+            next = reverse('runner_create')
+        return HttpResponseRedirect(next)
+
+    return render_to_response( 'runners/create.html',
+                               { 'form': form},
+                               context_instance = RequestContext(request),)
 
 def race_create(request):
-  form = RaceForm(request.POST or None)
-  if form.is_valid():
-    event = form.save(commit=False)
-    event.save()
-    if 'next' in request.POST:
-      next = request.POST['next']
-    else:
-      next = reverse('runner_create')
-    return HttpResponseRedirect(next)
-  return render_to_response(
-    'runners/race_create.html',
-    { 'form': form},
-    context_instance = RequestContext(request),
-    )
+    form = RaceForm(request.POST or None)
+    if form.is_valid():
+        event = form.save(commit=False)
+        event.save()
+        if 'next' in request.POST:
+            next = request.POST['next']
+        else:
+            next = reverse('runner_create')
+        return HttpResponseRedirect(next)
+    return render_to_response(
+      'runners/race_create.html',
+      { 'form': form},
+      context_instance = RequestContext(request),
+      )
 
 def city_create(request):
-  form = CityForm(request.POST or None)
-  if form.is_valid():
-    event = form.save(commit=False)
-    
-    event.save()
-    if 'next' in request.POST:
-      next = request.POST['next']
-    else:
-      next = reverse('city_creation')
-    return HttpResponseRedirect(next)
-  
-  return render_to_response(
-    'runners/city_create.html',
-    { 'form': form},
-    context_instance = RequestContext(request),
-  )
+    form = CityForm(request.POST or None)
+    if form.is_valid():
+        event = form.save(commit=False)
+
+        event.save()
+        if 'next' in request.POST:
+            next = request.POST['next']
+        else:
+            next = reverse('city_creation')
+        return HttpResponseRedirect(next)
+
+    return render_to_response(
+      'runners/city_create.html',
+      { 'form': form},
+      context_instance = RequestContext(request),
+    )

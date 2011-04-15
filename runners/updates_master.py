@@ -34,7 +34,7 @@ from pprint import pprint
 THIS_DIR = os.path.dirname(__file__)
 
 # grab the csv file and put it into the database.
-update = os.path.join(THIS_DIR, 'GNBTCMaster-2011-02-22.csv')
+update = os.path.join(THIS_DIR, 'latest.csv')
 dr = csv.DictReader(open(update))
 
 # id,firstname,MI,lastname,suffix,street_#,street,city,state,zip,

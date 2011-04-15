@@ -153,7 +153,7 @@ for line in filehandle.readlines():
               f.write('id:%s' % r.id)
             f.write("\n")
         else:
-            '''should get here so it is a wtf moment. :-('''
+            '''should NOT get here so it is a wtf moment. :-('''
             print 'wtf!',
             print 'okay, we can not get corresponding object id for',
             print '%s' % (attempt1.group('fnln'))
@@ -165,7 +165,7 @@ for line in filehandle.readlines():
         if attempt2:
             fn,ln = attempt2.group('fnln').split(None,1)
             e = getAthleteObj(attempt2.group('fnln'),first_initial=True)
-            # could it be one of the following:
+            # could it be one of the following ids?:
             if e:
                 f.write(line[:-1])
                 for r in e:

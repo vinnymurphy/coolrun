@@ -44,6 +44,8 @@ dr = csv.DictReader(open(update))
 # mobilephone,homephone,dob,email,Member Since,Type,gender,Comp?,
 # Exp,eNewsletter,mailit,Age
 for row in dr:
+    '''TODO: do a try block here because not all cities are in the zip
+    file'''
     city_obj, city_created = City.objects.get_or_create(zipcode=row['zip'])
     addr_obj, addr_created = Address.objects.get_or_create(
         number=row['street_#'],
@@ -53,7 +55,7 @@ for row in dr:
         if re.match(r'\d+/\d+/\d+', row['dob']):
             dob = dparser.parse(row['dob'])
             if dob.year > date.today().year:
-                ''' most likely they are not more than 100 years old'''
+                '''most likely they are not more than 100 years old'''
                 dob = dob.replace(year=dob.year - 100)
     try:
         runner_obj, runner_created = Runner.objects.get_or_create(
@@ -66,6 +68,7 @@ for row in dr:
             email=row['email'],
             dob=dob)
     except IntegrityError, e:
+        '''it barfed for some reason. :-('''
         print 'wtf',
         print row['firstname'], row['lastname'], row['dob']
         

@@ -39,47 +39,45 @@ from pprint import pprint
 if len(sys.argv) < 2:
     sys.stderr.write('Usage: %s <file name>\n' % (sys.argv[0]))
     sys.exit(1)
-
-#f='/tmp/nbhm-10.txt'
-#f='/tmp/pk.txt'
 f = sys.argv[1]
-
 result = []
 config = ConfigObj(f)
 for line in config['results'].split('\n'):
-  place = line[int(config['place'][0]):int(config['place'][1])].lstrip()
-  runtime = line[int(config['time'][0]):int(config['time'][1])]
+    place = line[int(config['place'][0]):int(config['place'][1])].lstrip()
+    runtime = line[int(config['time'][0]):int(config['time'][1])]
 
-  m = re.match('.*id:(\d+)', line)
-  if m:
-    print place, runtime
-    result.append((place, runtime, m.group(1)))
+    m = re.match('.*id:(\d+)', line)
+    if m:
+        print place, runtime
+        result.append((place, runtime, m.group(1)))
 
 # get the zipcode
 city, state = config['location'].split(',', 1)
 csv_file = os.path.join(os.path.dirname(__file__), '../zipcode.csv')
 reader = csv.reader(open(csv_file, 'rb'))
 for row in reader:
-  if row[1].lower() == city.lower() \
-        and row[2].lower() == state.lower().strip():
-    city_obj, city_created = City.objects.get_or_create(
-      city=row[1], state=row[2], zipcode=row[0])
-    break
+    '''grab the first city in the zipcode list.  Yeah, I know it is
+    not perfectly accurate, but it is close enough.'''
+    if row[1].lower() == city.lower() \
+           and row[2].lower() == state.lower().strip():
+        city_obj, city_created = City.objects.get_or_create(
+            city=row[1], state=row[2], zipcode=row[0])
+        break
 
 # get the race information
 race_obj, race_created = Race.objects.get_or_create(
-  name=config['name'],
-  url=config['url'],
-  date=config['date'],
-  finishers=config['finishers'],
-  measure=config['measure'],
-  distance=config['distance'],
-  gran_prix=config['gran_prix'],
-  city=city_obj)
+    name=config['name'],
+    url=config['url'],
+    date=config['date'],
+    finishers=config['finishers'],
+    measure=config['measure'],
+    distance=config['distance'],
+    gran_prix=config['gran_prix'],
+    city=city_obj)
 
 # insert individual results.
 for place, t, rid in result:
-  run_obj = Runner.objects.get(pk=rid)
-  print t, place, rid
-  result_obj, result_created = Result.objects.get_or_create(
-    race=race_obj, runner=run_obj, place=int(place), race_time=t)
+    run_obj = Runner.objects.get(pk=rid)
+    print t, place, rid
+    result_obj, result_created = Result.objects.get_or_create(
+        race=race_obj, runner=run_obj, place=int(place), race_time=t)
