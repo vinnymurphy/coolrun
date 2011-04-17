@@ -24,11 +24,17 @@ from django.contrib import admin
 from race.models import Result
 from runners.models import City, Address, Runner, Club
 
+def make_published(modeladmin, request, queryset):
+    queryset.update(in_newsletter='Y')
+
+make_published.short_description = "Mark selected runners as published in newsletter"
+
 class ResultAdmin(admin.ModelAdmin):
     list_display = ['race', 'runner', 'place', 'race_time',
                     'race_seconds', 'pace_per_mile', 'in_newsletter']
     ordering = ['race',]
     search_fields = ['race',]
+    actions = [make_published]
 
 admin.site.register(Result, ResultAdmin)
 
