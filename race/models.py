@@ -91,8 +91,6 @@ class Result(models.Model):
     self.pace_per_mile = '%d:%02d' % (m, s)
     super(Result, self).save(**kwargs)
 
-        
-
 class Club(models.Model):
   name = models.CharField('Club name', max_length=120)
   url  = models.URLField()
