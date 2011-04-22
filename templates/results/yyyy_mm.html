@@ -21,9 +21,9 @@
       	{{ race.city.city }}, {{ race.city.state }}</li> on {{ race.date|date:"l, F jS" }}.
       </td>
   <tr>
-    <td>{{ race.results.count }} GNBTC runners, with a total of
-      {{ race.finishers|intcomma }} finishers ran the {{ race.distance }}
-      {{ race.get_measure_display|lower }}{{ race.distance|pluralize }}.
+    <td>{{ race.results.count }} GNBTC runner{{ race.results.count|pluralize }}
+      of a total of {{ race.finishers|intcomma }} finishers which ran the
+      {{ race.distance }} {{ race.get_measure_display|lower }}{{ race.distance|pluralize }}.
     </td>
   </tr>
 </table>
