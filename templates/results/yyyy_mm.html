@@ -23,7 +23,7 @@
   <tr>
     <td>{{ race.results.count }} GNBTC runners, with a total of
       {{ race.finishers|intcomma }} finishers ran the {{ race.distance }}
-      {{ race.get_measure_display }}{{ race.distance|pluralize }}.
+      {{ race.get_measure_display }}{{ race.distance|pluralize|lower }}.
     </td>
   </tr>
 </table>
