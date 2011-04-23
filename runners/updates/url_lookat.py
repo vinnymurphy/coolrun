@@ -23,9 +23,15 @@
 ########################################################################
 
 import itertools
+import os
 import re
 import sys
 import urllib
+
+top_dir = os.path.abspath(os.path.join(\
+        os.path.dirname(os.path.dirname(__file__)), '..', '..', '..'))
+sys.path.insert(0, top_dir)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'coolrun.settings'
 
 from coolrun.runners.models import City, Address
 from coolrun.runners.models import Club, Runner
