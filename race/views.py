@@ -49,6 +49,7 @@ def gran_prix(request, yyyy):
                                       date__year=yyyy).order_by('date')
     age_groups = ((0,19),(20,29),(30,39),(40,49),
                   (50,59), (60,99))
+    gender = ['F','M']
     def age(dob, today=date.today()):
         if today.month < dob.month or \
                 (today.month == dob.month and today.day < dob.day):
@@ -59,14 +60,34 @@ def gran_prix(request, yyyy):
     determined by anything less than the first day of next year (new
     years day)'''
     year_end_date = date(int(yyyy)+1, 1, 1)
-    runids = []
-    for race in races:
-        runids.extend([ (age(result.runner.dob,year_end_date),
-                         result.runner,
-                         race,
-                         race.pk) for result in race.results()])
+    runDict = {}
+    for g in gender:
+        raceDict = {}
+        for ageMin, ageMax in age_groups:
+            for race in races:
+                for result in race.results():
+                    runAge = int(age(result.runner.dob,year_end_date))
+                    if runAge >= int(ageMin) and runAge <= int(ageMax)\
+                           and g == result.runner.gender:
+                        if result.runner.id in runDict:
+                            runDict[result.runner.id].append({
+                                'ageMin': ageMin,
+                                'ageMax': ageMax,
+                                'age': runAge,
+                                'raceId': race.id,
+                                'time': result.race_time,
+                                'result': result.runner,})
+                        else:
+                            runDict[result.runner.id] = [{
+                                'ageMin': ageMin,
+                                'ageMax': ageMax,
+                                'age': runAge,
+                                'raceId': race.id,
+                                'time': result.race_time,
+                                'result': result.runner,}]
+    pprint(runDict)
     return render_to_response('results/gp.html',
-                              {'races': races, 'runners': runids,} )
+                              {'races': races, 'runners': runDict,} )
     
 
 def yyyyresults(request, yyyy):

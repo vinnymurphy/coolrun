@@ -2,9 +2,13 @@
 {% load humanize %}
 {% block title %}Races - {{ block.super }}{% endblock %}
 {% block main_content %}
+{% if runids %}
+      run ids:
+      {{ runids }}
+{% endif %}      
 {% if races %}
-{% for r in races %}
-{{ r.results }}
+{% for race in races %}
+{{ race.gp_results }}
 {% endfor %}
 {{ races }}
 {% endif %}
