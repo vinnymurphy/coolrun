@@ -135,6 +135,7 @@ def getAthleteObj(fnln,first_initial=False):
 
 nFinishers = 0
 nFinishRegx = re.compile(r'^\s*(\d+)')
+race_date = None
 for line in filehandle.readlines():
     nFinished = nFinishRegx.search(line[:-1])
     if nFinished:
@@ -179,7 +180,10 @@ for line in filehandle.readlines():
                 f.write("\n")
 lines()
 f.write("'''\n")
-f.write('date = %s\n' % race_date)
+if race_date is None:
+    f.write('date = \n')
+else:
+    f.write('date = %s\n' % race_date)
 f.write('distance = 5\n')
 f.write('finishers = %s\n' % nFinishers)
 f.write('gran_prix  = N|Y\n')
