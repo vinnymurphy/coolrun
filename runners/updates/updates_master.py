@@ -26,6 +26,12 @@ import csv
 import dateutil.parser as dparser
 import os
 import re
+import sys
+
+top_dir = os.path.abspath(os.path.join(\
+        os.path.dirname(os.path.dirname(__file__)), '..', '..', '..'))
+sys.path.insert(0, top_dir)
+os.environ['DJANGO_SETTINGS_MODULE'] = 'coolrun.settings'
 
 from coolrun.runners.models import City, Address
 from coolrun.runners.models import Club, Runner
