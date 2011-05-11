@@ -85,4 +85,5 @@ INSTALLED_APPS = (
     'coolrun.runners',
     'coolrun.race',
     'django.contrib.humanize',
+    'south',
 )
