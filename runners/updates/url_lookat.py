@@ -35,18 +35,34 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'coolrun.settings'
 
 from coolrun.runners.models import City, Address
 from coolrun.runners.models import Club, Runner
+from coolrun.race.models import Race
 from dateutil import parser
 from pprint import pprint
 
+from django.db.models import Q
+from django.forms.models import model_to_dict
+
 if len(sys.argv) < 2:
-    sys.stderr.write('Usage: %s <url>\n' % (sys.argv[0]))
+    sys.stderr.write('Usage: %s <url> [date]\n' % (sys.argv[0]))
     sys.exit(1)
 
 url = sys.argv[1]
+if len(sys.argv) > 2:
+    from_date = parser.parse(sys.argv[2]).date()
+else:
+    from_date = None
+
 output = '/tmp/%s' % (url.split('/')[-1:][0])
 f = open(output, 'w')
-from django.forms.models import model_to_dict
-all_runners = Runner.objects.all()
+
+if from_date:
+    all_runners = Runner.objects.filter(
+        Q(date_created__gte = from_date) |
+        Q(date_modified__gte = from_date)
+        )
+else:
+    all_runners = Runner.objects.all()
+    
 fi_ln_regx = []
 fn_ln_regx = []
 for r in all_runners:
@@ -71,7 +87,6 @@ for r in all_runners:
 
 fi_ln_regx = r'(?:' + '|'.join(fi_ln_regx) + r')';
 fn_ln_regx = r'(?:' + '|'.join(fn_ln_regx) + r')';
-#print fn_ln_regx
 filn_regx = re.compile(r'(?P<fnln>%s)' % fi_ln_regx,re.IGNORECASE)
 fnln_regx = re.compile(r'(?P<fnln>%s)' % fn_ln_regx,re.IGNORECASE)
 
@@ -143,7 +158,7 @@ for line in filehandle.readlines():
         
     m_race_name = re.match('<h1>(.*?)</h1>', line[:-1])
     if m_race_name:
-      race_name = m_race_name.group(1)
+        race_name = m_race_name.group(1)
     m_h2 = re.match('<h2>(.*?)</h2>', line[:-1])
     if m_h2:
         h2 = m_h2.group(1)
@@ -180,17 +195,36 @@ for line in filehandle.readlines():
                 f.write("\n")
 lines()
 f.write("'''\n")
-if race_date is None:
-    f.write('date = \n')
+
+raceinfo = None
+try:
+    raceinfo = Race.objects.filter(url=url)[0]
+except:
+    pass
+
+if raceinfo:
+    f.write('date = %s\n' % (raceinfo.date))
+    f.write('distance = %s\n' % (raceinfo.distance))
+    f.write('finishers = %s\n' % (raceinfo.finishers))
+    f.write('gran_prix  = %s\n' % (raceinfo.gran_prix))
+    f.write('location = "%s, %s"\n' % (raceinfo.city.city, raceinfo.city.state))
+    f.write('measure = %s\n' % (raceinfo.measure))
+    f.write('name = "%s"\n' % (raceinfo.name))
+    f.write('place = 0, 10\n')
+    f.write('time = 0, 10\n')
+    f.write('url = %s\n' % (raceinfo.url))
 else:
-    f.write('date = %s\n' % race_date)
-f.write('distance = 5\n')
-f.write('finishers = %s\n' % nFinishers)
-f.write('gran_prix  = N|Y\n')
-f.write('location = "%s"\n' % race_place)
-f.write('measure = M|K\n')
-f.write('name = "%s"\n' % race_name)
-f.write('place = 0, 10\n')
-f.write('time = 0, 10\n')
-f.write('url = %s\n' % url)
+    if race_date is None:
+        f.write('date = \n')
+    else:
+        f.write('date = %s\n' % race_date)
+    f.write('distance = 5\n')
+    f.write('finishers = %s\n' % nFinishers)
+    f.write('gran_prix  = N|Y\n')
+    f.write('location = "%s"\n' % race_place)
+    f.write('measure = M|K\n')
+    f.write('name = "%s"\n' % race_name)
+    f.write('place = 0, 10\n')
+    f.write('time = 0, 10\n')
+    f.write('url = %s\n' % url)
 print output

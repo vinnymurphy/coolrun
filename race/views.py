@@ -20,8 +20,9 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ########################################################################
-from datetime import date
+import csv
 
+from datetime import date, datetime
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
 from django.http import Http404
@@ -30,7 +31,6 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 
 from coolrun.race.models import Race, Result
-from pprint import pprint
 
 def results(request, yyyy, mm):
     races = Race.objects.all().filter(date__year=yyyy,
@@ -49,7 +49,6 @@ def gran_prix(request, yyyy):
                                       date__year=yyyy).order_by('date')
     age_groups = ((0,19),(20,29),(30,39),(40,49),
                   (50,59), (60,99))
-    gender = ['F','M']
     def age(dob, today=date.today()):
         if today.month < dob.month or \
                 (today.month == dob.month and today.day < dob.day):
@@ -61,33 +60,65 @@ def gran_prix(request, yyyy):
     years day)'''
     year_end_date = date(int(yyyy)+1, 1, 1)
     runDict = {}
-    for g in gender:
-        raceDict = {}
-        for ageMin, ageMax in age_groups:
-            for race in races:
-                for result in race.results():
-                    runAge = int(age(result.runner.dob,year_end_date))
-                    if runAge >= int(ageMin) and runAge <= int(ageMax)\
-                           and g == result.runner.gender:
-                        if result.runner.id in runDict:
-                            runDict[result.runner.id].append({
-                                'ageMin': ageMin,
-                                'ageMax': ageMax,
-                                'age': runAge,
-                                'raceId': race.id,
-                                'time': result.race_time,
-                                'result': result.runner,})
-                        else:
-                            runDict[result.runner.id] = [{
-                                'ageMin': ageMin,
-                                'ageMax': ageMax,
-                                'age': runAge,
-                                'raceId': race.id,
-                                'time': result.race_time,
-                                'result': result.runner,}]
-    pprint(runDict)
-    return render_to_response('results/gp.html',
-                              {'races': races, 'runners': runDict,} )
+    
+    raceDict = {}
+    raceids = [(r.date,r.id,r.name) for r in races]
+    for ageMin, ageMax in age_groups:
+        for race in races:
+            for result in race.results():
+                runAge = int(age(result.runner.dob,year_end_date))
+                if runAge >= int(ageMin) and runAge <= int(ageMax):
+                    if result.runner.id in runDict:
+                        runDict[result.runner.id].append({
+                            'age': runAge,
+                            'ageMax': ageMax,
+                            'ageMin': ageMin,
+                            'gender': result.runner.gender,
+                            'raceId': race.id,
+                            'result': result.runner,
+                            'time': result.race_time,
+                            })
+                    else:
+                        runDict[result.runner.id] = [{
+                            'age': runAge,
+                            'ageMax': ageMax,
+                            'ageMin': ageMin,
+                            'gender': result.runner.gender,
+                            'raceId': race.id,
+                            'result': result.runner,
+                            'time': result.race_time,
+                            }]
+                            
+    l = sorted(runDict, key=lambda x: (runDict[x][0]['gender'].lower(),
+                                       runDict[x][0]['age']))
+    raceids.sort()
+    res = [['Name','Age Group', races]]
+    for runid in l:
+        a = []
+        a.append(runDict[runid][0]['result'])
+        a.append('%s to %s' % ( runDict[runid][0]['ageMin'],
+                                runDict[runid][0]['ageMax']))
+        z = [x['raceId'] for x in runDict[runid]]
+        events = []
+        for dt, rid, n in raceids:
+            if rid in z:
+                events.append(runDict[runid][z.index(rid)]['time'])
+            else:
+                events.append(None)
+        a.append(events)
+        res.append(a)
+
+    response = HttpResponse(mimetype='text/csv')
+    fname = 'gp-%s.csv' % (datetime.today().strftime('%d%b%Y%H%M'))
+    response['Content-Disposition'] = 'attachment; filename=%s' %(fname)
+    writer = csv.writer(response)
+    for n,r,races in res:
+        a = [n,r]
+        for race in races:
+            a.append(race)
+        writer.writerow(a)
+    
+    return response
     
 
 def yyyyresults(request, yyyy):

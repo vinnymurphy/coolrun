@@ -2,14 +2,32 @@
 {% load humanize %}
 {% block title %}Races - {{ block.super }}{% endblock %}
 {% block main_content %}
-{% if runids %}
-      run ids:
-      {{ runids }}
-{% endif %}      
-{% if races %}
-{% for race in races %}
-{{ race.gp_results }}
+{% if res %}
+{% for n, agegrp, r in res %}
+  {% if forloop.counter0 == 0 %}
+<table width="100%">
+  <tr>
+    <th align="left">Name</th>
+    <th align="left">Age Group</th>
+    {% for event in r %}      
+    <th align="left">{{ event.date }}</th>
+    {% endfor %}
+  </tr>
+  {% else %}
+  <tr>
+    <td>{{ n }}</td>
+    <td>{{ agegrp }}</td>
+    {% for event in r %}
+       {% if event == None %}
+    <td></td>
+       {% else %}
+    <td>{{ event }}</td>
+       {% endif %}
+    {% endfor %}
+  </tr>
+  {% endif %}
+
 {% endfor %}
-{{ races }}
+</table>
 {% endif %}
 {% endblock %}
