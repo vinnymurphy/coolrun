@@ -34,7 +34,7 @@ from coolrun.race.models import Race, Result
 
 def results(request, yyyy, mm):
     races = Race.objects.all().filter(date__year=yyyy,
-                                      date__month=mm).order_by('date')
+                                      date__month=mm).order_by('-date')
     return render_to_response('results/yyyy_mm.html',
                               { 'races': races})
 
