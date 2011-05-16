@@ -63,20 +63,22 @@ for row in dr:
             if dob.year > date.today().year:
                 '''most likely they are not more than 100 years old'''
                 dob = dob.replace(year=dob.year - 100)
-    try:
-        runner_obj, runner_created = Runner.objects.get_or_create(
-            first_name=row['firstname'],
-            gender=row['gender'].upper(),
-            phone=row['homephone'],
-            mobile=row['mobilephone'],
-            sur_name=row['lastname'],
-            address=addr_obj,
-            email=row['email'],
-            dob=dob)
-    except IntegrityError, e:
-        '''it barfed for some reason. :-('''
-        print 'wtf',
-        print row['firstname'], row['lastname'], row['dob']
-        
-    if runner_created:
-        print 'created %s %s' % (row['firstname'], row['lastname'])
+
+    # update runners if we have the firstname, lastname and dob.  If
+    # the csv file has dob change you'll have to make the change
+    # manually.
+    filter_attrs = {'first_name': row['firstname'],
+                    'sur_name': row['lastname'],
+                    'dob': dob}
+    attrs = {'gender': row['gender'].upper(),
+             'phone': row['homephone'],
+             'mobile': row['mobilephone'],
+             'address': addr_obj,
+             'email': row['email'],}
+    runner = Runner.objects.filter(**filter_attrs).update(**attrs)
+    if not runner:
+        print 'adding %s %s to the database' % (row['firstname'],
+                                                row['lastname'])
+        attrs.update(filter_attrs)
+        obj = Runner.objects.create(**attrs)
+            
