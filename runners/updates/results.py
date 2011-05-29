@@ -45,6 +45,10 @@ if len(sys.argv) < 2:
     sys.stderr.write('Usage: %s <file name>\n' % (sys.argv[0]))
     sys.exit(1)
 f = sys.argv[1]
+if not os.path.exists(f):
+    sys.stderr.write('Error: %s does not exist\n' % (f))
+    sys.exit(1)
+                     
 result = []
 config = ConfigObj(f)
 for line in config['results'].split('\n'):

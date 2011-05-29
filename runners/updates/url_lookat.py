@@ -26,6 +26,7 @@ import itertools
 import os
 import re
 import sys
+import tempfile
 import urllib
 
 top_dir = os.path.abspath(os.path.join(\
@@ -36,6 +37,7 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'coolrun.settings'
 from coolrun.runners.models import City, Address
 from coolrun.runners.models import Club, Runner
 from coolrun.race.models import Race
+from datetime import date
 from dateutil import parser
 from pprint import pprint
 
@@ -51,7 +53,12 @@ urls.append(sys.argv[1])
 
 if len(sys.argv) > 2:
     from_date = parser.parse(sys.argv[2]).date()
-    races = [u.url for u in Race.objects.filter(date__year=2011, gran_prix='N')]
+    # June 1st is suppose to be the cutoff for updating the gran prix.
+    # Todo: * figure out algorithm to do June 1st.
+    #       * figure out how we would do the new year.
+    #races = [u.url for u in Race.objects.filter(date__year=2011,
+    #                                            gran_prix='N')]
+    races = [u.url for u in Race.objects.filter(date__year=2011)]
     urls += races
 else:
     from_date = None
@@ -64,8 +71,13 @@ if from_date:
 else:
     all_runners = Runner.objects.all()
 
+tmpDir = '%s/%s' % (tempfile.gettempdir(),
+                    date.today().strftime('%Y%m%d'))
+if not os.path.exists(tmpDir):
+    os.makedirs(tmpDir)
+
 for url in urls:
-    output = '/tmp/%s' % (url.split('/')[-1:][0])
+    output = '%s/%s' % (tmpDir, url.split('/')[-1:][0])
     f = open(output, 'w')
 
     fi_ln_regx = []
