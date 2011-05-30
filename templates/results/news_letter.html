@@ -5,11 +5,13 @@
 {% if races %}
 {% for race in races %}
 {% if race.not_in_newsletter %}
-  <p>There were {{ race.results.count }} GNBTC runner{{ race.results.count|pluralize }} at the <a href="{{ race.url }}">{{ race.name }}</a>, run in 
+  <p>There w{{ race.results.count|pluralize:"as,ere" }}
+    {{ race.results.count }} GNBTC runner{{ race.results.count|pluralize }}
+    at the <a href="{{ race.url }}">{{ race.name }}</a>, run in 
     {{ race.city.city }}, {{ race.city.state }} on
-    {{ race.date|date:"l, F jS" }}.  There were
-    a total of {{ race.finishers|intcomma }} finishers, running
-    {{ race.distance }}{{ race.measure }}.
+    {{ race.date|date:"l, F jS" }} with a field
+    of {{ race.finishers|intcomma }} finishers running
+    {{ race.distance }} {{ race.get_measure_display|lower }}{{ race.distance|pluralize }}.
   </p>
 <table width="75%">
   <tr>
