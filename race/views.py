@@ -38,6 +38,41 @@ def results(request, yyyy, mm):
     return render_to_response('results/yyyy_mm.html',
                               { 'races': races})
 
+def topDistance(request, yyyy):
+    kilometer = 0.621371192
+    numRunners = 20
+    results = Result.objects.filter(race__date__year=yyyy)
+    runnerDict = {}
+    males = []
+    females = []
+
+    for result in results:
+        # differentiate same names with the date-of-birth
+        runnerKey = '%s %s %s' % (result.runner.gender, result.runner,
+                                  result.runner.dob)
+        distance = float(result.race.distance)
+        if result.race.measure == 'K':
+            distance = distance * kilometer
+        try:
+            runnerDict[runnerKey].append(distance)
+        except KeyError:
+            runnerDict[runnerKey] = [distance]
+            
+    for athlete in runnerDict:
+        if athlete.startswith('M '):
+            males.append((sum(runnerDict[athlete]), athlete[2:-11],
+                          len(runnerDict[athlete])))
+        else:
+            females.append((sum(runnerDict[athlete]), athlete[2:-11],
+                            len(runnerDict[athlete])))
+    males.sort()
+    females.sort()
+    allList = zip(females[-numRunners:], males[-numRunners:])
+
+    return render_to_response('results/top_distance.html',
+                              { 'distances': sorted(list(allList), reverse=True) })
+
+
 def news_letter_results(request):
     races = Race.objects.all().order_by('date')
 

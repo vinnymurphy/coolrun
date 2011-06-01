@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load humanize %}
+{% block title %}Races - {{ block.super }}{% endblock %}
+{% block main_content %}
+{% if distances %}
+<hr id="top"\>
+<h3>The Long run</h3>
+
+<p>Below are the top {{ distances|length }} female and male runners
+that have logged the most miles in races we have logged as of
+{% now "F jS" %}.</p>
+
+<table width="75%">
+  <tr>
+    <th align="left" colspan=4>Female</th>
+    <th align="left" colspan=3>Male</th>
+  </tr>
+  <tr>
+    <th align="left">place</th>
+    <th align="left">Name</th>
+    <th align="left">Distance (miles)</th>
+    <th align="left"># Races</th>
+    <th align="left">Name</th>
+    <th align="left">Distance (miles)</th>
+    <th align="left"># Races</th>
+  </tr>
+  {% for female, male in distances %}
+  <tr style="{% cycle 'background-color: #FFCCCC; color: black;' 'background-color: #99CCCC; color: black;' %}">
+    <td>{{ forloop.counter }}</td>
+    <td>{{ female.1 }}</th>
+    <td>{{ female.0|floatformat }}</th>
+    <td>{{ female.2 }}</th>
+    <td>{{ male.1 }}</th>
+    <td>{{ male.0|floatformat }}</th>
+    <td>{{ male.2 }}</th>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock %}
