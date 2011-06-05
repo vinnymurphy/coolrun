@@ -76,6 +76,28 @@ tmpDir = '%s/%s' % (tempfile.gettempdir(),
 if not os.path.exists(tmpDir):
     os.makedirs(tmpDir)
 
+def guess_distance(race_name):
+    rv = (None,None)
+    half_re = re.compile(r'(?:1/2|half)', re.IGNORECASE)
+    marathon_re = re.compile(r'marathon', re.IGNORECASE)
+    kilometer_re = re.compile(r'(\d+)\s*(?:K|kilometers?)\b', re.IGNORECASE)
+    mile_re = re.compile(r'(\d+)\s*(?:M|mile(?:s|r)?)\b', re.IGNORECASE)
+    
+    if marathon_re.search(race_name):
+        if half_re.search(race_name):
+            rv = (13.11, 'M')
+        else:
+            rv = (26.22, 'M')
+    m = kilometer_re.match(race_name)
+    if m:
+        rv = (m.group(1), 'K')
+    m = mile_re.match(race_name)
+    if m:
+        rv = (m.group(1), 'M')
+
+    return(rv)
+    
+    
 for url in urls:
     output = '%s/%s' % (tmpDir, url.split('/')[-1:][0])
     f = open(output, 'w')
@@ -227,11 +249,18 @@ for url in urls:
             f.write('date = \n')
         else:
             f.write('date = %s\n' % race_date)
-        f.write('distance = 5\n')
+        dist, measure = guess_distance(race_name)
+        if dist:
+            f.write('distance = %s\n' % dist)
+        else:
+            f.write('distance = 5\n')
         f.write('finishers = %s\n' % nFinishers)
-        f.write('gran_prix  = N|Y\n')
+        f.write('gran_prix  = N\n')
         f.write('location = "%s"\n' % race_place)
-        f.write('measure = M|K\n')
+        if measure:
+            f.write('measure = %s\n' % measure)
+        else:
+            f.write('measure = M|K\n')
         f.write('name = "%s"\n' % race_name)
         f.write('place = 0, 10\n')
         f.write('time = 0, 10\n')
