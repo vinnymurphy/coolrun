@@ -56,9 +56,9 @@ if len(sys.argv) > 2:
     # June 1st is suppose to be the cutoff for updating the gran prix.
     # Todo: * figure out algorithm to do June 1st.
     #       * figure out how we would do the new year.
-    #races = [u.url for u in Race.objects.filter(date__year=2011,
-    #                                            gran_prix='N')]
-    races = [u.url for u in Race.objects.filter(date__year=2011)]
+    races = [u.url for u in Race.objects.filter(date__year=2011,
+                                                gran_prix='N')]
+    #races = [u.url for u in Race.objects.filter(date__year=2011)]
     urls += races
 else:
     from_date = None
