@@ -22,6 +22,9 @@
 # SOFTWARE.
 ########################################################################
 
+'''lookup a url and see if any of the runners from the club are in the
+web page. The output is sent to a temp file so that you can edit and
+then when you are done run the results.py script.'''
 import itertools
 import os
 import re
@@ -34,12 +37,11 @@ top_dir = os.path.abspath(os.path.join(\
 sys.path.insert(0, top_dir)
 os.environ['DJANGO_SETTINGS_MODULE'] = 'coolrun.settings'
 
-from coolrun.runners.models import City, Address
-from coolrun.runners.models import Club, Runner
+from coolrun.runners.models import Runner
 from coolrun.race.models import Race
 from datetime import date
 from dateutil import parser
-from pprint import pprint
+#from pprint import pprint
 
 from django.db.models import Q
 from django.forms.models import model_to_dict
@@ -71,35 +73,37 @@ if from_date:
 else:
     all_runners = Runner.objects.all()
 
-tmpDir = '%s/%s' % (tempfile.gettempdir(),
+tmp_directory = '%s/%s' % (tempfile.gettempdir(),
                     date.today().strftime('%Y%m%d'))
-if not os.path.exists(tmpDir):
-    os.makedirs(tmpDir)
+if not os.path.exists(tmp_directory):
+    os.makedirs(tmp_directory)
 
-def guess_distance(race_name):
-    rv = (None,None)
+def guess_distance(race_title):
+    '''Look at the title of the race and see if we can determine the
+    distance and measurement of the race.'''
+    rv_distance_measure = (None, None)
     half_re = re.compile(r'(?:1/2|half)', re.IGNORECASE)
     marathon_re = re.compile(r'marathon', re.IGNORECASE)
     kilometer_re = re.compile(r'.*(\d+)\s*(?:K|kilometers?)\b', re.IGNORECASE)
     mile_re = re.compile(r'.*(\d+)\s*(?:M|mile(?:s|r)?)\b', re.IGNORECASE)
     
-    if marathon_re.search(race_name):
-        if half_re.search(race_name):
-            rv = (13.11, 'M')
+    if marathon_re.search(race_title):
+        if half_re.search(race_title):
+            rv_distance_measure = (13.11, 'M')
         else:
-            rv = (26.22, 'M')
-    m = kilometer_re.match(race_name)
-    if m:
-        rv = (m.group(1), 'K')
-    m = mile_re.match(race_name)
-    if m:
-        rv = (m.group(1), 'M')
+            rv_distance_measure = (26.22, 'M')
+    m_k = kilometer_re.match(race_title)
+    if m_k:
+        rv_distance_measure = (m_k.group(1), 'K')
+    m_m = mile_re.match(race_title)
+    if m_m:
+        rv_distance_measure = (m_m.group(1), 'M')
 
-    return(rv)
+    return(rv_distance_measure)
     
     
 for url in urls:
-    output = '%s/%s' % (tmpDir, url.split('/')[-1:][0])
+    output = '%s/%s' % (tmp_directory, url.split('/')[-1:][0])
     f = open(output, 'w')
 
     fi_ln_regx = []
@@ -108,10 +112,10 @@ for url in urls:
         runna = model_to_dict(r)
         ln = runna['sur_name']
         if re.search(r'\s+', ln):
-          '''add \s* where there are spaces for regexes so that Pierre de
-          Fermat (Pierre de\s*Fermat) would be picked up in the results
-          had he not died in the year 1665'''
-          ln = re.sub(r'\s+','\\s*',ln)
+            ## add \s* where there are spaces for regexes so that
+            ## Pierre de Fermat (Pierre de\s*Fermat) would be picked
+            ## up in the results had he not died in the year 1665
+            ln = re.sub(r'\s+', '\\s*', ln)
 
         # need to order it so lastname first or last
         firegx = r'\b%s[a-z]*?\s+\b%s\b' % (runna['first_name'][:1], ln)
@@ -124,66 +128,73 @@ for url in urls:
         fnregx = r'\b%s,?\s+\b%s\b' % (ln, runna['first_name'])
         fn_ln_regx.append(fnregx)
 
-    fi_ln_regx = r'(?:' + '|'.join(fi_ln_regx) + r')';
-    fn_ln_regx = r'(?:' + '|'.join(fn_ln_regx) + r')';
-    filn_regx = re.compile(r'(?P<fnln>%s)' % fi_ln_regx,re.IGNORECASE)
-    fnln_regx = re.compile(r'(?P<fnln>%s)' % fn_ln_regx,re.IGNORECASE)
+    fi_ln_regx = r'(?:' + '|'.join(fi_ln_regx) + r')'
+    fn_ln_regx = r'(?:' + '|'.join(fn_ln_regx) + r')'
+    filn_regx = re.compile(r'(?P<fnln>%s)' % fi_ln_regx, re.IGNORECASE)
+    fnln_regx = re.compile(r'(?P<fnln>%s)' % fn_ln_regx, re.IGNORECASE)
 
-    filehandle = urllib.urlopen(url)
+    url_handle = urllib.urlopen(url)
     race_name = ''
     race_place = ''
     f.write("results='''\n")
 
-    def getAthleteObj(fnln,first_initial=False):
-        def _ath_obj(fn,ln):
-            aObj = Runner.objects.filter(sur_name__iexact='%s' % (ln.strip(',')),
-                                         first_name__iexact='%s' % (fn.strip(',')))
-            return(aObj)
-        def _ath_fi_obj(fn,ln):
-            aObj = Runner.objects.filter(sur_name__iexact='%s' % (ln.strip(',')),
-                                         first_name__istartswith='%s' % (fn[:1]))
+    def get_athlete_object(fnln, first_initial=False):
+        '''return the object id of the athlete'''
+        def _ath_obj(fname, lname):
+            '''return exact match object id(s)'''
+            athlete_obj = Runner.objects.filter(sur_name__iexact='%s' % \
+                                             (lname.strip(',')),
+                                         first_name__iexact='%s' \
+                                             % (fname.strip(',')))
+            return(athlete_obj)
+        def _ath_fi_obj(fname, lname):
+            '''return near match object id(s)'''
+            athlete_obj = Runner.objects.filter(sur_name__iexact='%s' % \
+                                             (lname.strip(',')),
+                                         first_name__istartswith='%s' % \
+                                             (fname[:1]))
 
-            return(aObj)
+            return(athlete_obj)
 
-        aName = fnln.split()
-        if len(aName) > 2:
-            '''The firstname or lastname has a space in it so we split it
-            up into the permutations and then run it through the object
-            finder.'''
-            perms = list(itertools.permutations(aName))
-            for p in perms:
-                fn, ln = ' '.join(p[2:]), ' '.join(p[:2])
-                obj = _ath_obj(fn, ln)
-                if obj:
-                    return(obj)
-            for p in perms:
-                fn, ln = ' '.join(p[2:]), ' '.join(p[:2])
-                obj = _ath_fi_obj(fn, ln)
-                if obj:
-                    return(obj)
+        a_name = fnln.split()
+        if len(a_name) > 2:
+            ## The firstname or lastname has a space in it so we split
+            ## it up into the permutations and then run it through the
+            ## object finder.
+            perms = list(itertools.permutations(a_name))
+            for perm in perms:
+                fname, lname = ' '.join(perm[2:]), ' '.join(perm[:2])
+                perm_obj = _ath_obj(fname, lname)
+                if perm_obj:
+                    return(perm_obj)
+            for perm in perms:
+                fname, lname = ' '.join(perm[2:]), ' '.join(perm[:2])
+                perm_obj = _ath_fi_obj(fname, lname)
+                if perm_obj:
+                    return(perm_obj)
         else:
-            fn,ln = fnln.split(None,1)
+            fname, lname = fnln.split(None, 1)
 
         if first_initial:
-            aObj = _ath_fi_obj(fn,ln)
+            athlete_obj = _ath_fi_obj(fname, lname)
         else:
-            aObj = _ath_obj(fn,ln)
-        if aObj:
-            return(aObj)
+            athlete_obj = _ath_obj(fname, lname)
+        if athlete_obj:
+            return(athlete_obj)
         else:
             if first_initial:
-                aObj = _ath_fi_obj(ln,fn)
+                athlete_obj = _ath_fi_obj(lname, fname)
             else:
-                aObj = _ath_obj(ln,fn)
-            if aObj:
-                return(aObj)
+                athlete_obj = _ath_obj(lname, fname)
+            if athlete_obj:
+                return(obj)
             else:
-                print "Warning: can't find %s %s" % (fn,ln)
+                print "Warning: can't find %s %s" % (fname, lname)
 
     nFinishers = 0
-    nFinishRegx = re.compile(r'^\s*(\d+)')
+    nFinishRegx = re.compile(r'^\s*(\d+)\s+')
     race_date = None
-    for line in filehandle.readlines():
+    for line in url_handle.readlines():
         nFinished = nFinishRegx.search(line[:-1])
         if nFinished:
             nFinishers = nFinished.group(1)
@@ -200,14 +211,14 @@ for url in urls:
         keepGoing = True
         attempt1 = fnln_regx.search(line[:-1])
         if attempt1:
-            e = getAthleteObj(attempt1.group('fnln'))
-            if e:
+            obj = get_athlete_object(attempt1.group('fnln'))
+            if obj:
                 f.write(line[:-1])
-                for r in e:
-                  f.write('id:%s' % r.id)
+                for athlete in obj:
+                    f.write('id:%s' % athlete.id)
                 f.write("\n")
             else:
-                '''should NOT get here so it is a wtf moment. :-('''
+                ## should NOT get here so it is a wtf moment. :-(
                 print 'wtf!',
                 print 'okay, we can not get corresponding object id for',
                 print '%s' % (attempt1.group('fnln'))
@@ -217,13 +228,16 @@ for url in urls:
         if keepGoing:
             attempt2 = filn_regx.search(line[:-1])
             if attempt2:
-                fn,ln = attempt2.group('fnln').split(None,1)
-                e = getAthleteObj(attempt2.group('fnln'),first_initial=True)
+                fn, ln = attempt2.group('fnln').split(None, 1)
+                obj = get_athlete_object(attempt2.group('fnln'),
+                                         first_initial=True)
                 # could it be one of the following ids?:
-                if e:
+                if obj:
                     f.write(line[:-1])
-                    for r in e:
-                      f.write('%s %s- id:%s ' % (r.first_name, r.sur_name, r.id))
+                    for athlete in obj:
+                        f.write('%s %s- id:%s ' % (athlete.first_name,
+                                                   athlete.sur_name,
+                                                   athlete.id))
                     f.write("\n")
     f.write("'''\n")
 
@@ -238,7 +252,8 @@ for url in urls:
         f.write('distance = %s\n' % (raceinfo.distance))
         f.write('finishers = %s\n' % (raceinfo.finishers))
         f.write('gran_prix  = %s\n' % (raceinfo.gran_prix))
-        f.write('location = "%s, %s"\n' % (raceinfo.city.city, raceinfo.city.state))
+        f.write('location = "%s, %s"\n' % (raceinfo.city.city,
+                                           raceinfo.city.state))
         f.write('measure = %s\n' % (raceinfo.measure))
         f.write('name = "%s"\n' % (raceinfo.name))
         f.write('place = 0, 10\n')
