@@ -187,7 +187,7 @@ for url in urls:
             else:
                 athlete_obj = _ath_obj(lname, fname)
             if athlete_obj:
-                return(obj)
+                return(athlete_obj)
             else:
                 print "Warning: can't find %s %s" % (fname, lname)
 
