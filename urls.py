@@ -21,7 +21,6 @@
 # SOFTWARE.
 ########################################################################
 from django.conf.urls.defaults import *
-
 from django.contrib import admin
 admin.autodiscover()
 
@@ -39,6 +38,7 @@ urlpatterns += patterns('coolrun.runners.views',
   (r'^city/(?P<city_id>\d+)/$', "city"),
   (r'^birthday/(?P<mm>\d+)/$', "birthday_month"),
   url(r'^city_create/$', 'city_create', name='city_creation'),
+  url(r'^search/', 'runners_search', name='runners_search'),
 )
 urlpatterns += patterns('coolrun.race.views',
   (r'^results/(?P<yyyy>\d+)/(?P<mm>\d+)/$', "results"),

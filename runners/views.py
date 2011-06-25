@@ -27,7 +27,7 @@ from django.http import Http404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-
+from pprint import pprint
 
 from coolrun.runners.forms  import RunnerForm
 from coolrun.runners.forms  import RaceForm
@@ -126,3 +126,18 @@ def city_create(request):
       { 'form': form},
       context_instance = RequestContext(request),
     )
+
+def runners_search(request):
+    error = False
+    if 'q' in request.GET:
+        q = request.GET['q']
+        if not q:
+            error = True
+        else:
+            runners = Runner.objects.filter(first_name__icontains=q)
+            return render_to_response('runners/search_result.html',
+                                      { 'runners': runners,
+                                        'q': q})
+    else:
+        return render_to_response('runners/search_form.html',
+                                  {'error': True})

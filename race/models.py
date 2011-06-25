@@ -69,6 +69,9 @@ class Result(models.Model):
   def __unicode__(self):
     return '%s at %s per mile' % (self.runner, self.pace_per_mile)
 
+  def race_name(self):
+    return self.race.name
+  
   def save(self, **kwargs):
     secs = 0
     mile_k = 1.609344 # kilometers

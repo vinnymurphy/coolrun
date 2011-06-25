@@ -29,11 +29,14 @@ def make_published(modeladmin, request, queryset):
 
 make_published.short_description = "Mark selected runners as published in newsletter"
 
+def name_race(self):
+    return self.race.name
+
 class ResultAdmin(admin.ModelAdmin):
     list_display = ['race', 'runner', 'place', 'race_time',
                     'race_seconds', 'pace_per_mile', 'in_newsletter']
-    ordering = ['race',]
-    search_fields = ['race',]
+    ordering = ['-race',]
+    search_fields = ['runner',]
     actions = [make_published]
 
 admin.site.register(Result, ResultAdmin)

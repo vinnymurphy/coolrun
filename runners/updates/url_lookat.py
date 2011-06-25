@@ -53,6 +53,13 @@ if len(sys.argv) < 2:
 urls = []
 urls.append(sys.argv[1])
 
+def _strip_initial(name):
+    if len(name) > 2:
+        name_match = re.match(r'^(\w+)\s\w\.?$',name)
+        if name_match:
+            name = name_match.group(1)
+    return(name)
+
 if len(sys.argv) > 2:
     from_date = parser.parse(sys.argv[2]).date()
     # June 1st is suppose to be the cutoff for updating the gran prix.
@@ -118,14 +125,15 @@ for url in urls:
             ln = re.sub(r'\s+', '\\s*', ln)
 
         # need to order it so lastname first or last
-        firegx = r'\b%s[a-z]*?\s+\b%s\b' % (runna['first_name'][:1], ln)
+        firegx = r'\b%s[a-z]*?\s+(?:\w\.?\s+)?\b%s\b' % \
+            (runna['first_name'][:1], ln)
         fi_ln_regx.append(firegx)
         # lastname, fi
         firegx = r'\b%s\b\s*%s' % (ln, runna['first_name'][:1])
         fi_ln_regx.append(firegx)
         fnregx = r'\b%s\s+\b%s\b' % (runna['first_name'], ln)
         fn_ln_regx.append(fnregx)
-        fnregx = r'\b%s,?\s+\b%s\b' % (ln, runna['first_name'])
+        fnregx = r'\b%s,?\s+(?:\w\.?\s+)?\b%s\b' % (ln, runna['first_name'])
         fn_ln_regx.append(fnregx)
 
     fi_ln_regx = r'(?:' + '|'.join(fi_ln_regx) + r')'
@@ -138,10 +146,13 @@ for url in urls:
     race_place = ''
     f.write("results='''\n")
 
+        
     def get_athlete_object(fnln, first_initial=False):
         '''return the object id of the athlete'''
         def _ath_obj(fname, lname):
             '''return exact match object id(s)'''
+            fname = _strip_initial(fname)
+            lname = _strip_initial(lname)
             athlete_obj = Runner.objects.filter(sur_name__iexact='%s' % \
                                              (lname.strip(',')),
                                          first_name__iexact='%s' \
@@ -149,6 +160,8 @@ for url in urls:
             return(athlete_obj)
         def _ath_fi_obj(fname, lname):
             '''return near match object id(s)'''
+            fname = _strip_initial(fname)
+            lname = _strip_initial(lname)
             athlete_obj = Runner.objects.filter(sur_name__iexact='%s' % \
                                              (lname.strip(',')),
                                          first_name__istartswith='%s' % \

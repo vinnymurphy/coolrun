@@ -42,3 +42,4 @@ class CityForm(forms.ModelForm):
   class Meta:
     model = City
     fields = ('zipcode',)
+

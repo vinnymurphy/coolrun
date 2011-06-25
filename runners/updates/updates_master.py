@@ -21,14 +21,10 @@
 # CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 ########################################################################
-'''
-Any updates that the club has in their csv file should be brought in
-using this helper program.
-'''
+''' look through the csv file and populate our models.'''
 import csv
-import dateutil.parser as dparser
+import dateutil.parser
 import os
-import re
 import sys
 
 top_dir = os.path.abspath(os.path.join(\
@@ -38,37 +34,34 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'coolrun.settings'
 
 from coolrun.runners.models import City, Address
 from coolrun.runners.models import Runner
-from datetime import date
-#from pprint import pprint
+from datetime import datetime
 
 this_dir = os.path.dirname(__file__)
 
 # grab the csv file and put it into the database.
 update = os.path.join(this_dir, 'latest.csv')
-csv_dr = csv.DictReader(open(update))
+fh_reader = csv.DictReader(open(update))
 
-### The csv files fields are:
-### id,firstname,MI,lastname,suffix,street_#,street,city,state,zip,
-### mobilephone,homephone,dob,email,Member Since,Type,gender,Comp?,
-### Exp,eNewsletter,mailit,Age.
-
-### FIX: do a try block here because not all cities are in the zip
-### file
-
-for row in csv_dr:
+## Grab the values out of the spreadsheet.  The values we have for the
+## columns are:
+## id,firstname,MI,lastname,suffix,street_#,street,city,state,zip,
+## mobilephone,homephone,dob,email,Member Since,Type,gender,Comp?,
+## Exp,eNewsletter,mailit,Age
+for row in fh_reader:
+    ## next task: do a try block here because not all cities are in the zip
+    ## file
     city_obj, city_created = City.objects.get_or_create(zipcode=row['zip'])
     addr_obj, addr_created = Address.objects.get_or_create(
         number=row['street_#'],
         street=row['street'],
         city=city_obj)
     if row['dob']:
-        if re.match(r'\d+/\d+/\d+', row['dob']):
-            dob = dparser.parse(row['dob'])
-        if dob.year > date.today().year:
-            ## most likely they are not more than 100 years old
-            dob = dob.replace(year=dob.year - 100)
-        
-
+        dob = dateutil.parser.parse(row['dob'])
+        if dob > datetime.now():
+            dob = datetime(dob.year - 100, dob.month, dob.day)
+    # update runners if we have the firstname, lastname and dob.  If
+    # the csv file has dob change you'll have to make the change
+    # manually.
     filter_attrs = {'first_name': row['firstname'],
                     'sur_name': row['lastname'],
                     'dob': dob}
@@ -81,6 +74,5 @@ for row in csv_dr:
     if not runner:
         print 'adding %s %s to the database' % (row['firstname'],
                                                 row['lastname'])
-    attrs.update(filter_attrs)
-    obj = Runner.objects.create(**attrs)
-            
+        attrs.update(filter_attrs)
+        obj = Runner.objects.create(**attrs)
