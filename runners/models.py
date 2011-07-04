@@ -27,6 +27,21 @@ from django.contrib.localflavor.us.models import PhoneNumberField
 from datetime import date
 
 class City(models.Model):
+  '''City class: descriptive model of where a city/town exists.
+
+  Attributes:
+  city -- the city or town which a person lives.
+  state -- the state which a person lives.
+  zipcode -- US Postal services code for city.
+  longitude/latitude -- where the city exists on a map.
+
+  Description:
+  Most of the time all we need is the zipcode and we can fill in all
+  the fields as needed.  There is zipcode csv file which most of the
+  cities in towns in it.  If it doesn't have a city/town in it, simply
+  look it up and then update the csv file.
+
+  '''
   city = models.CharField('City', max_length=40)
   state = models.CharField('State', max_length=2, choices=STATE_CHOICES,
                            default='MA')

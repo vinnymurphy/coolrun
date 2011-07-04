@@ -5,8 +5,13 @@
 {% if races %}
 {% for race in races %}
 {% if race.not_in_newsletter %}
+  {% ifequal race.not_in_newsletter.count race.results.count %}
   <p>There w{{ race.results.count|pluralize:"as,ere" }}
     {{ race.results.count }} GNBTC runner{{ race.results.count|pluralize }}
+  {% else %}
+  <p><strong>Update</strong> of {{ race.not_in_newsletter.count }} additional
+    runner{{ race.not_in_newsletter.count|pluralize }} that we found in the results
+  {% endifequal %}
     at the <a href="{{ race.url }}">{{ race.name }}</a>, run in 
     {{ race.city.city }}, {{ race.city.state }} on
     {{ race.date|date:"l, F jS" }} with a field

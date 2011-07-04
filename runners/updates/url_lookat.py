@@ -208,10 +208,6 @@ for url in urls:
     nFinishRegx = re.compile(r'^\s*(\d+)\s+')
     race_date = None
     for line in url_handle.readlines():
-        nFinished = nFinishRegx.search(line[:-1])
-        if nFinished:
-            nFinishers = nFinished.group(1)
-
         m_race_name = re.match('<h1>(.*?)</h1>', line[:-1])
         if m_race_name:
             race_name = m_race_name.group(1)
@@ -220,6 +216,11 @@ for url in urls:
             h2 = m_h2.group(1)
             race_place = h2
             race_date = parser.parse(h2, fuzzy=True).date()
+
+        nFinished = nFinishRegx.search(line[:-1])
+        if nFinished:
+            nFinishers = nFinished.group(1)
+
 
         keepGoing = True
         attempt1 = fnln_regx.search(line[:-1])
