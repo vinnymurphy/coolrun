@@ -91,8 +91,10 @@ def guess_distance(race_title):
     rv_distance_measure = (None, None)
     half_re = re.compile(r'(?:1/2|half)', re.IGNORECASE)
     marathon_re = re.compile(r'marathon', re.IGNORECASE)
-    kilometer_re = re.compile(r'.*(\d+)\s*(?:K|kilometers?)\b', re.IGNORECASE)
-    mile_re = re.compile(r'.*(\d+)\s*(?:M|mile(?:s|r)?)\b', re.IGNORECASE)
+    kilometer_re = re.compile(r'.*(\d+(?:\.\d+)?)\s*(?:K|kilometers?)\b',
+                              re.IGNORECASE)
+    mile_re = re.compile(r'.*(\d+(?:\.\d+)?)\s*(?:M|mile(?:s|r)?)\b',
+                         re.IGNORECASE)
     
     if marathon_re.search(race_title):
         if half_re.search(race_title):

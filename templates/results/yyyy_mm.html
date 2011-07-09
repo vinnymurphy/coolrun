@@ -3,7 +3,7 @@
 {% block title %}Races - {{ block.super }}{% endblock %}
 {% block main_content %}
 {% if races %}
-<hr id="top"\>
+<hr id="top">
 <h3>Races</h3>
 <p>These are the races on this page:</p>
   <ol>
@@ -14,8 +14,9 @@
 {% endfor %}
   </ol>
 {% for race in races %}
-<hr \>
-<table id="{{ race.pk }}">
+<hr>
+<table summary="races done over the past month">
+  <a name="{{ race.pk }}"></a>
   <tr>
     <td><a href="{{ race.url }}">{{ race.name }}</a>, run in
       	{{ race.city.city }}, {{ race.city.state }}</li> on {{ race.date|date:"l, F jS" }}.
@@ -47,7 +48,7 @@
 <a href="#top">back to top of page...</a>
 {% endif %}  
 {% endfor %}
-<hr \>
+<hr>
 Last updated {% now "F j, Y h:i A" %}
 {% endif %}
 {% endblock %}
