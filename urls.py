@@ -29,7 +29,6 @@ urlpatterns = patterns('',
 )
 
 urlpatterns += patterns('coolrun.runners.views',
-  (r'^index/', "index"),
   (r'^runners/', "runners"),
   (r'^cities/', "cities"),
   (r'^runner/(?P<runner_id>\d+)/$', "runner"),
