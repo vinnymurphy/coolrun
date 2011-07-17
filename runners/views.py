@@ -35,9 +35,6 @@ from coolrun.runners.forms  import CityForm
 from coolrun.runners.models import Runner
 from coolrun.runners.models import City
 
-def index(request):
-    return HttpResponse("Hello, world. You're at the poll index.")
-
 def birthday_month(request, mm):
     '''We sort the list by day number instead of date sort, which
     gives the oldest person first.  The trick is to create the day
