@@ -44,5 +44,6 @@ urlpatterns += patterns('coolrun.race.views',
   (r'^gran_prix/(?P<yyyy>\d+)/$', "gran_prix"),
   (r'^results/(?P<yyyy>\d+)/$', "yyyyresults"),
   (r'^longrun/(?P<yyyy>\d+)/$', 'topDistance'),
+  (r'^longrun/(?P<yyyy>\d+)/(?P<numRunners>\d+)$', 'topDistance'),                        
   (r'^newsletter/$', 'news_letter_results'),
 )

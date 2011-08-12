@@ -38,9 +38,9 @@ def results(request, yyyy, mm):
     return render_to_response('results/yyyy_mm.html',
                               { 'races': races})
 
-def topDistance(request, yyyy):
+def topDistance(request, yyyy, numRunners=20):
     kilometer = 0.621371192
-    numRunners = 20
+    numRunners = int(numRunners)
     results = Result.objects.filter(race__date__year=yyyy)
     runnerDict = {}
     males = []
