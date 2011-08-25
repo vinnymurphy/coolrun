@@ -15,13 +15,14 @@ Description:
 <insert file description here!>
 ######################################################################
 '''
+import os
 import string   
 import sys
 import sqlite3
 import re
 import urllib
 
-from pprint import pprint
+from datetime import datetime
 
 def makeIndex(myurl):
     # open local html file   
@@ -47,37 +48,87 @@ def makeIndex(myurl):
                         words[ word ] = 1   
     return words
 
-if __name__ == "__main__":
-    words = makeIndex(sys.argv[1])
-    sorted_word_list = words.keys()   
-    sorted_word_list.sort()
-    
-    conn = sqlite3.connect('../../Runner.db')
+def cityWords(database):
+    conn = sqlite3.connect(database)
     cur = conn.cursor()
-    cur.execute("select distinct(city) from club_city WHERE length(city) > 1")
+    cur.execute("select distinct(city) from club_city WHERE length(city) > 3")
     city = {}
     for row in cur:
         for r in row[0].split():
             if len(r) > 3:
                 r = r.lower()
-                print r
                 if city.has_key(r):
                     city[r] += 1
                 else:
                     city[r] = 1
     excludes = ['east', 'south', 'north', 'west',]
-    cities = list(set(city.keys()) - set(excludes))
-    pprint(cities)
-    hits = []
-    total = 0
-    city_names = list(set(sorted_word_list).intersection(set(cities)))
-    pprint(city_names)
-    for city_name in city_names:
-        value = int(words[city_name])
-        if value:
-            hits.append(city_name)
-            total += value
+    return(list(set(city.keys()) - set(excludes)))
 
-    hits.sort()
-    print '%s had %d hits for' % (sys.argv[1], total),
-    print ', '.join(hits),
+def resultURLS(page):
+    result_regx = re.compile(r'.*<a href="(/results/\S+.shtml)">')
+    coolrunning = 'http://coolrunning.com'
+    webpage = urllib.urlopen(page)
+    html = webpage.read()
+    webpage.close()
+    return (['%s%s' % (coolrunning, r) for r in result_regx.findall(html)])
+
+def updateDB(dbfile, urls):
+    create_table = False
+    if not os.path.exists(dbfile):
+        create_table = True
+    conn = sqlite3.connect(dbfile)
+    curs = conn.cursor()
+    if create_table:
+        curs.execute('''CREATE TABLE state_urls(state TEXT NOT NULL,
+                        url TEXT NOT NULL, PRIMARY KEY(state, url))''')
+    for t in urls:
+        curs.execute('insert into state_urls values (?,?)', t)
+    conn.commit()
+        
+    
+def coolURLSinDB(urls, dbfile):
+    if not os.path.exists(dbfile):
+        return(urls)
+    
+    conn = sqlite3.connect(dbfile)
+    curs = conn.cursor()
+    curs.execute('''SELECT state, url FROM state_urls''')
+    db_urls = []
+    for row in curs:
+        db_urls.append((row[0], row[1]))
+    exclusive = list(set(urls).difference(set(db_urls)))
+    
+    return(exclusive)
+
+
+
+def coolURLS():
+    states = ['ma', 'ri', 'ct','vt', 'nh']
+    RESURL = 'http://www.coolrunning.com/results/%s/%s.shtml'
+    today = datetime.now()
+    urls = []
+    city_words = cityWords('../../Runner.db')
+    for state in states:
+        pages = resultURLS(RESURL % (today.strftime('%y'), state))
+        for page in pages:
+            urls.append((state, page))
+    dbfile = os.path.join(os.path.dirname(__file__), 'coolurl.db')
+    inserts = coolURLSinDB(urls, dbfile)
+    intersection = []
+    for u in inserts:
+        index_dict = makeIndex(u[1])
+        intersection = list(set(index_dict.keys()).intersection(set(city_words)))
+        if intersection:
+            total = 0
+            intersection.sort()
+            for inter in intersection:
+                total += int(index_dict[inter])
+            print '%s has %d references to %s' % (u[1],
+                                                  total,
+                                                  ', '.join(intersection))
+    updateDB(dbfile, inserts)
+    
+    
+
+if __name__ == "__main__":
+    coolURLS()
