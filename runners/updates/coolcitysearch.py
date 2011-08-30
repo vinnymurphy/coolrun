@@ -123,7 +123,7 @@ def coolURLSinDB(urls, dbfile):
 
 
 def coolURLS():
-    states = ['ma', 'ri', 'ct','vt', 'nh']
+    states = ['ma', 'ri', 'ct','vt', 'nh', 'fl', 'ny']
     RESURL = 'http://www.coolrunning.com/results/%s/%s.shtml'
     today = datetime.now()
     urls = []
