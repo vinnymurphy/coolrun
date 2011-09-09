@@ -37,6 +37,8 @@ def results(request, yyyy, mm):
                                       date__month=mm).order_by('-date')
     return render_to_response('results/yyyy_mm.html',
                               { 'races': races})
+AGE_GROUPS = ((0,19),(20,29),(30,39),(40,49),
+              (50,59), (60,99))
 
 def topDistance(request, yyyy, numRunners=20):
     kilometer = 0.621371192
@@ -70,7 +72,8 @@ def topDistance(request, yyyy, numRunners=20):
     allList = zip(females[-numRunners:], males[-numRunners:])
 
     return render_to_response('results/top_distance.html',
-                              { 'distances': sorted(list(allList), reverse=True) })
+                              { 'distances': sorted(list(allList),
+                                                    reverse=True) })
 
 
 def news_letter_results(request):
@@ -79,17 +82,31 @@ def news_letter_results(request):
     return render_to_response('results/news_letter.html',
                               {'races': races})
 
+def age(dob, today=date.today()):
+    if today.month < dob.month or \
+            (today.month == dob.month and today.day < dob.day):
+        return today.year - dob.year - 1
+    else:
+        return today.year - dob.year
+
+def gp(request, yyyy):
+    results = Result.objects.filter(race__gran_prix='Y',
+                                    race__date__year=yyyy)
+    year_end_date = date(int(yyyy)+1, 1, 1)
+
+    race_results = []
+    for r in results:
+        
+        print r.runner.firstname, r.race.name
+    
+        
+    return render_to_response('results/gp.html',
+                              {'results': results})
+
 def gran_prix(request, yyyy):
     races = Race.objects.all().filter(gran_prix='Y',
                                       date__year=yyyy).order_by('date')
-    age_groups = ((0,19),(20,29),(30,39),(40,49),
-                  (50,59), (60,99))
-    def age(dob, today=date.today()):
-        if today.month < dob.month or \
-                (today.month == dob.month and today.day < dob.day):
-            return today.year - dob.year - 1
-        else:
-            return today.year - dob.year
+
     '''calculate the grandprix with a certain date.  Ours is the
     determined by anything less than the first day of next year (new
     years day)'''
@@ -98,7 +115,7 @@ def gran_prix(request, yyyy):
     
     raceDict = {}
     raceids = [(r.date,r.id,r.name) for r in races]
-    for ageMin, ageMax in age_groups:
+    for ageMin, ageMax in AGE_GROUPS:
         for race in races:
             for result in race.results():
                 runAge = int(age(result.runner.dob,year_end_date))

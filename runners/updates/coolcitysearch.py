@@ -37,54 +37,57 @@ total for the cities.
 '''
 import os
 import string   
-import sys
 import sqlite3
 import re
 import urllib
 
 from datetime import datetime
 
-def makeIndex(myurl):
-    # open local html file   
-    page = myurl
+CITY_LENGTH_MIN = 3
+
+def make_index(myurl):
+    '''open the local html file'''
     url_handle = urllib.urlopen(myurl)
        
     # initialize stuff here   
-    wordcount = 0   
     words     = { }   
        
     for line in url_handle.readlines():
-        line = string.strip( line )    
+        line = line.strip()
         for word in re.split(   
                 "[" + string.whitespace + string.punctuation + "]+" ,   
                 line ) :
-            if len(word) > 3:
+            if len(word) > CITY_LENGTH_MIN:
                 word = string.lower( word )   
                 if re.match( "^[" + string.lowercase + "]+$" , word ) :   
-                    wordcount += 1   
                     if words.has_key( word ) :   
                         words[ word ] += 1   
                     else :   
                         words[ word ] = 1   
     return words
 
-def cityWords(database):
+def city_words(database):
+    '''pick out the cities that the runners live in.'''
     conn = sqlite3.connect(database)
     cur = conn.cursor()
-    cur.execute("select distinct(city) from club_city WHERE length(city) > 3")
+    cur.execute('''
+SELECT DISTINCT(city) FROM club_address
+  LEFT JOIN club_city WHERE club_city.id = club_address.city_id
+''')
     city = {}
     for row in cur:
-        for r in row[0].split():
-            if len(r) > 3:
-                r = r.lower()
-                if city.has_key(r):
-                    city[r] += 1
+        for city_name in row[0].split():
+            if len(city_name) > CITY_LENGTH_MIN:
+                city_name = city_name.lower()
+                if city.has_key(city_name):
+                    city[city_name] += 1
                 else:
-                    city[r] = 1
-    excludes = ['east', 'south', 'north', 'west',]
+                    city[city_name] = 1
+    excludes = ['east', 'south', 'north', 'west', ]
     return(list(set(city.keys()) - set(excludes)))
 
-def resultURLS(page):
+def result_urls(page):
+    '''find the /results/... html pages.'''
     result_regx = re.compile(r'.*<a href="(/results/\S+.shtml)">')
     coolrunning = 'http://coolrunning.com'
     webpage = urllib.urlopen(page)
@@ -92,7 +95,8 @@ def resultURLS(page):
     webpage.close()
     return (['%s%s' % (coolrunning, r) for r in result_regx.findall(html)])
 
-def updateDB(dbfile, urls):
+def update_db(dbfile, urls):
+    '''enter the url into the db file'''
     create_table = False
     if not os.path.exists(dbfile):
         create_table = True
@@ -101,12 +105,13 @@ def updateDB(dbfile, urls):
     if create_table:
         curs.execute('''CREATE TABLE state_urls(state TEXT NOT NULL,
                         url TEXT NOT NULL, PRIMARY KEY(state, url))''')
-    for t in urls:
-        curs.execute('insert into state_urls values (?,?)', t)
+    for url_info in urls:
+        curs.execute('insert into state_urls values (?,?)', url_info)
     conn.commit()
         
     
-def coolURLSinDB(urls, dbfile):
+def cool_urls_in_db(urls, dbfile):
+    '''find the urls in the database'''
     if not os.path.exists(dbfile):
         return(urls)
     
@@ -122,33 +127,35 @@ def coolURLSinDB(urls, dbfile):
 
 
 
-def coolURLS():
-    states = ['ma', 'ri', 'ct','vt', 'nh', 'fl', 'ny']
-    RESURL = 'http://www.coolrunning.com/results/%s/%s.shtml'
+def cool_urls():
+    '''pick up the urls from coolrunning that are from the states
+    variable and the current year'''
+    states = ['ma', 'ri', 'ct', 'vt', 'nh', 'fl', 'ny']
+    state_page = 'http://www.coolrunning.com/results/%s/%s.shtml'
     today = datetime.now()
     urls = []
-    city_words = cityWords('../../Runner.db')
+    cities = city_words('../../Runner.db')
     for state in states:
-        pages = resultURLS(RESURL % (today.strftime('%y'), state))
+        pages = result_urls(state_page % (today.strftime('%y'), state))
         for page in pages:
             urls.append((state, page))
     dbfile = os.path.join(os.path.dirname(__file__), 'coolurl.db')
-    inserts = coolURLSinDB(urls, dbfile)
+    inserts = cool_urls_in_db(urls, dbfile)
     intersection = []
-    for u in inserts:
-        index_dict = makeIndex(u[1])
-        intersection = list(set(index_dict.keys()).intersection(set(city_words)))
+    for insert in inserts:
+        index_dict = make_index(insert[1])
+        intersection = list(set(index_dict.keys()).intersection(set(cities)))
         if intersection:
             total = 0
             intersection.sort()
             for inter in intersection:
                 total += int(index_dict[inter])
-            print '%s has %d references to %s' % (u[1],
+            print '%s has %d references to %s' % (insert[1],
                                                   total,
                                                   ', '.join(intersection))
-    updateDB(dbfile, inserts)
+    update_db(dbfile, inserts)
     
     
 
 if __name__ == "__main__":
-    coolURLS()
+    cool_urls()
