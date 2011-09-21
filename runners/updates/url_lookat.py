@@ -109,15 +109,11 @@ def guess_distance(race_title):
         rv_distance_measure = (m_m.group(1), 'M')
 
     return(rv_distance_measure)
-    
-    
-for url in urls:
-    output = '%s/%s' % (tmp_directory, url.split('/')[-1:][0])
-    f = open(output, 'w')
 
+def name_regx(runners):
     fi_ln_regx = []
     fn_ln_regx = []
-    for r in all_runners:
+    for r in runners:
         runna = model_to_dict(r)
         ln = runna['sur_name']
         if re.search(r'\s+', ln):
@@ -143,7 +139,27 @@ for url in urls:
     filn_regx = re.compile(r'(?P<fnln>%s)' % fi_ln_regx, re.IGNORECASE)
     fnln_regx = re.compile(r'(?P<fnln>%s)' % fn_ln_regx, re.IGNORECASE)
 
-    url_handle = urllib.urlopen(url)
+    return filn_regx, fnln_regx
+
+def race_meta_data(url):
+    '''return race name, place and date'''
+    rname, rplace, rdate = None, None, None
+    for line in urllib.urlopen(url).readlines():
+        m_race_name = re.match('<h1>(.*?)</h1>', line)
+        if m_race_name:
+            rname = m_race_name.group(1)
+        m_h2 = re.match('<h2>(.*?)</h2>', line)
+        if m_h2:
+            h2 = m_h2.group(1)
+            rplace = h2
+            rdate = parser.parse(h2, fuzzy=True).date()
+    return rname, rplace, rdate
+
+for url in urls:
+    output = '%s/%s' % (tmp_directory, url.split('/')[-1:][0])
+    f = open(output, 'w')
+
+    filn_regx, fnln_regx = name_regx(all_runners)
     race_name = ''
     race_place = ''
     f.write("results='''\n")
@@ -209,27 +225,20 @@ for url in urls:
     nFinishers = 0
     nFinishRegx = re.compile(r'^\s*(\d+)\s+')
     race_date = None
-    for line in url_handle.readlines():
-        m_race_name = re.match('<h1>(.*?)</h1>', line[:-1])
-        if m_race_name:
-            race_name = m_race_name.group(1)
-        m_h2 = re.match('<h2>(.*?)</h2>', line[:-1])
-        if m_h2:
-            h2 = m_h2.group(1)
-            race_place = h2
-            race_date = parser.parse(h2, fuzzy=True).date()
-
-        nFinished = nFinishRegx.search(line[:-1])
+    ascii = os.popen("lynx --dump -width=200 -nolist " + url).read()
+    race_name, race_place, race_date = race_meta_data(url)
+    for line in ascii.split('\n'):
+        nFinished = nFinishRegx.search(line)
         if nFinished:
             nFinishers = nFinished.group(1)
 
 
         keepGoing = True
-        attempt1 = fnln_regx.search(line[:-1])
+        attempt1 = fnln_regx.search(line)
         if attempt1:
             obj = get_athlete_object(attempt1.group('fnln'))
             if obj:
-                f.write(line[:-1])
+                f.write(line)
                 for athlete in obj:
                     f.write('id:%s' % athlete.id)
                 f.write("\n")
@@ -238,18 +247,18 @@ for url in urls:
                 print 'wtf!',
                 print 'okay, we can not get corresponding object id for',
                 print '%s' % (attempt1.group('fnln'))
-                print line[:-1]
+                print line
             keepGoing = False
 
         if keepGoing:
-            attempt2 = filn_regx.search(line[:-1])
+            attempt2 = filn_regx.search(line)
             if attempt2:
                 fn, ln = attempt2.group('fnln').split(None, 1)
                 obj = get_athlete_object(attempt2.group('fnln'),
                                          first_initial=True)
                 # could it be one of the following ids?:
                 if obj:
-                    f.write(line[:-1])
+                    f.write(line)
                     for athlete in obj:
                         f.write('%s %s- id:%s ' % (athlete.first_name,
                                                    athlete.sur_name,
