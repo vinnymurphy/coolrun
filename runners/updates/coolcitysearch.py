@@ -44,6 +44,7 @@ import urllib
 from datetime import datetime
 
 CITY_LENGTH_MIN = 3
+COOLRUNNING_URL = 'http://www.coolrunning.com'
 
 def make_index(myurl):
     '''open the local html file'''
@@ -89,11 +90,10 @@ SELECT DISTINCT(city) FROM club_address
 def result_urls(page):
     '''find the /results/... html pages.'''
     result_regx = re.compile(r'.*<a href="(/results/\S+.shtml)">')
-    coolrunning = 'http://coolrunning.com'
     webpage = urllib.urlopen(page)
     html = webpage.read()
     webpage.close()
-    return (['%s%s' % (coolrunning, r) for r in result_regx.findall(html)])
+    return (['%s%s' % (COOLRUNNING_URL, r) for r in result_regx.findall(html)])
 
 def update_db(dbfile, urls):
     '''enter the url into the db file'''
@@ -131,7 +131,7 @@ def cool_urls():
     '''pick up the urls from coolrunning that are from the states
     variable and the current year'''
     states = ['ma', 'ri', 'ct', 'vt', 'nh', 'fl', 'ny']
-    state_page = 'http://www.coolrunning.com/results/%s/%s.shtml'
+    state_page = COOLRUNNING_URL + '/results/%s/%s.shtml'
     today = datetime.now()
     urls = []
     cities = city_words('../../Runner.db')

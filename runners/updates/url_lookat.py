@@ -143,7 +143,7 @@ def name_regx(runners):
 
 def race_meta_data(url):
     '''return race name, place and date'''
-    rname, rplace, rdate = None, None, None
+    rname, rplace, rdate = '','',''
     for line in urllib.urlopen(url).readlines():
         m_race_name = re.match('<h1>(.*?)</h1>', line)
         if m_race_name:
