@@ -129,16 +129,22 @@ def cool_urls_in_db(urls, dbfile):
 
 def cool_urls():
     '''pick up the urls from coolrunning that are from the states
-    variable and the current year'''
+    variable and the current year.  If it is January then look at last
+    years pages too.'''
     states = ['ma', 'ri', 'ct', 'vt', 'nh', 'fl', 'ny']
     state_page = COOLRUNNING_URL + '/results/%s/%s.shtml'
     today = datetime.now()
+    years = [int(today.strftime('%y'))]
+    if 1 == today.month:
+        years.append(int(today.strftime('%y')) - 1)
+
     urls = []
     cities = city_words('../../Runner.db')
     for state in states:
-        pages = result_urls(state_page % (today.strftime('%y'), state))
-        for page in pages:
-            urls.append((state, page))
+        for year in years:
+            pages = result_urls(state_page % (year, state))
+            for page in pages:
+                urls.append((state, page))
     dbfile = os.path.join(os.path.dirname(__file__), 'coolurl.db')
     inserts = cool_urls_in_db(urls, dbfile)
     intersection = []
