@@ -93,7 +93,18 @@ def result_urls(page):
     webpage = urllib.urlopen(page)
     html = webpage.read()
     webpage.close()
-    return (['%s%s' % (COOLRUNNING_URL, r) for r in result_regx.findall(html)])
+    return ['%s%s' % (COOLRUNNING_URL, r) for r in result_regx.findall(html)]
+
+def sub_urls(page):
+    '''find the sublist on this results page'''
+    result_regx = re.compile(r'<a href="(./\S+.shtml)">')
+    webpage = urllib.urlopen(page)
+    html = webpage.read()
+    webpage.close()
+    url_part = page.rpartition('/')[0]
+    results = ['%s/%s' % (url_part, r[2:])
+               for r in result_regx.findall(html)]
+    return list(set(results))
 
 def update_db(dbfile, urls):
     '''enter the url into the db file'''
@@ -110,7 +121,7 @@ def update_db(dbfile, urls):
     conn.commit()
         
     
-def cool_urls_in_db(urls, dbfile):
+def put_cool_urls_in_db(urls, dbfile):
     '''find the urls in the database'''
     if not os.path.exists(dbfile):
         return(urls)
@@ -125,28 +136,52 @@ def cool_urls_in_db(urls, dbfile):
     
     return(exclusive)
 
+def get_cool_urls_from_db(dbfile):
+    '''get the urls from the database'''
+    if not os.path.exists(dbfile):
+        return(None)
+    
+    conn = sqlite3.connect(dbfile)
+    curs = conn.cursor()
+    curs.execute('''SELECT url FROM state_urls''')
+    db_urls = []
+    for row in curs:
+        db_urls.append((row[0]))
+    exclusive = set(db_urls)
+    return(exclusive)
 
+def get_state_urls(existing_urls):
+    '''walk through the list of states on the coolrunning website and
+    grab results that we have not seen'''
+    states = ['ma', 'ri', 'ct', 'vt', 'nh', 'fl', 'ny']
+    state_page = COOLRUNNING_URL + '/results/%s/%s.shtml'
+    today = datetime.now()
+    years = [int(today.strftime('%y'))]
+
+    if 1 == today.month:
+        years.append(int(today.strftime('%y')) - 1)
+
+    urls = []
+    for state in states:
+        for year in years:
+            pages = result_urls(state_page % (year, state))
+            for page in pages:
+                if page not in existing_urls:
+                    urls.append((state, page))
+                    sub_pages = sub_urls(page)
+                    for sub_page in sub_pages:
+                        urls.append((state, sub_page))
+    return list(set(urls))
 
 def cool_urls():
     '''pick up the urls from coolrunning that are from the states
     variable and the current year.  If it is January then look at last
     years pages too.'''
-    states = ['ma', 'ri', 'ct', 'vt', 'nh', 'fl', 'ny']
-    state_page = COOLRUNNING_URL + '/results/%s/%s.shtml'
-    today = datetime.now()
-    years = [int(today.strftime('%y'))]
-    if 1 == today.month:
-        years.append(int(today.strftime('%y')) - 1)
-
-    urls = []
-    cities = city_words('../../Runner.db')
-    for state in states:
-        for year in years:
-            pages = result_urls(state_page % (year, state))
-            for page in pages:
-                urls.append((state, page))
     dbfile = os.path.join(os.path.dirname(__file__), 'coolurl.db')
-    inserts = cool_urls_in_db(urls, dbfile)
+    cities = city_words('../../Runner.db')
+    urls = get_state_urls(get_cool_urls_from_db(dbfile))
+    inserts = put_cool_urls_in_db(urls, dbfile)
+
     intersection = []
     for insert in inserts:
         index_dict = make_index(insert[1])
