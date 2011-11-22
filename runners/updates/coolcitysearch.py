@@ -36,7 +36,6 @@ total for the cities.
 ######################################################################
 '''
 import os
-import string   
 import sqlite3
 import re
 import urllib
@@ -47,24 +46,19 @@ CITY_LENGTH_MIN = 3
 COOLRUNNING_URL = 'http://www.coolrunning.com'
 
 def make_index(myurl):
-    '''open the local html file'''
+    '''parse to file to get all the words in it that are greater than
+    CITY_LENGTH_MIN long'''
     url_handle = urllib.urlopen(myurl)
-       
-    # initialize stuff here   
-    words     = { }   
-       
+    words = {}
+
     for line in url_handle.readlines():
-        line = line.strip()
-        for word in re.split(   
-                "[" + string.whitespace + string.punctuation + "]+" ,   
-                line ) :
+        line = re.sub(r'[^a-z]', ' ', line.lower())
+        for word in line.split():
             if len(word) > CITY_LENGTH_MIN:
-                word = string.lower( word )   
-                if re.match( "^[" + string.lowercase + "]+$" , word ) :   
-                    if words.has_key( word ) :   
-                        words[ word ] += 1   
-                    else :   
-                        words[ word ] = 1   
+                try:
+                    words[word] += 1
+                except KeyError:
+                    words[word] = 1
     return words
 
 def city_words(database):
