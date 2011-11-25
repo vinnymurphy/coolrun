@@ -22,6 +22,8 @@
 ########################################################################
 import csv
 
+from calendar import HTMLCalendar
+from coolrun.race.models import Race, Result
 from datetime import date, datetime
 from django.http import HttpResponse
 from django.shortcuts import render_to_response
@@ -29,16 +31,23 @@ from django.http import Http404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
+from django.utils.safestring import mark_safe
+from itertools import groupby
 
-from coolrun.race.models import Race, Result
-
-def results(request, yyyy, mm):
-    races = Race.objects.all().filter(date__year=yyyy,
-                                      date__month=mm).order_by('-date')
-    return render_to_response('results/yyyy_mm.html',
-                              { 'races': races})
 AGE_GROUPS = ((0,19),(20,29),(30,39),(40,49),
               (50,59), (60,99))
+
+def results(request, yyyy, mm):
+    '''grab the results for the month and pair together the urls with
+    dates that are the same.'''
+    races = Race.objects.all().filter(date__year=yyyy,
+                                      date__month=mm).order_by('-date')
+    field = lambda race: race.date
+    cal = [(day, list(items)) for day, items in groupby(races, field)]
+    cal.sort(reverse=True)
+    return render_to_response('results/yyyy_mm.html',
+                              { 'races': races,
+                                'calendar': cal})
 
 def topDistance(request, yyyy, numRunners=20):
     kilometer = 0.621371192

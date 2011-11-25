@@ -3,16 +3,22 @@
 {% block title %}Races - {{ block.super }}{% endblock %}
 {% block main_content %}
 {% if races %}
-<hr id="top">
-<h3>Races</h3>
-  <ol>
-{% for race in races %}
-{% if race.results.count %}
-    <li>{{ race.name }} on <a href="#{{ race.pk }}">{{ race.date|date:"l, F jS" }}.</a></li>
+<h3>{{ races.count}} Race{{ races.count|pluralize }}</h3>
+<ul>
+{% if calendar %}
+{% for k, v in calendar %}
+<li>{{ k|date:"l, F jS" }}:
+{% for race in v %}
+<a href="#{{ race.pk }}">{{ race.name }}</a>
+{% if not forloop.last %}
+,&nbsp;
 {% endif %}
 {% endfor %}
-  </ol>
+{% endfor %}
 <p>Corrections? <a href="mailto:+results@rungnbtc.com">Email us.</a></p>
+
+{% endif %}
+</ul>
 {% for race in races %}
 <hr>
 <table summary="races done over the past month">
