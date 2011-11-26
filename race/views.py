@@ -22,7 +22,6 @@
 ########################################################################
 import csv
 
-from calendar import HTMLCalendar
 from coolrun.race.models import Race, Result
 from datetime import date, datetime
 from django.http import HttpResponse
@@ -31,7 +30,6 @@ from django.http import Http404
 from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
-from django.utils.safestring import mark_safe
 from itertools import groupby
 
 AGE_GROUPS = ((0,19),(20,29),(30,39),(40,49),
