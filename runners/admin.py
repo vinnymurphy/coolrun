@@ -23,7 +23,7 @@
 
 from django.contrib import admin
 from runners.models import City, Address, Runner
-from runners.models import Club
+from runners.models import Club, Membership
 from race.models import Race
 
 class RunnerAdmin(admin.ModelAdmin):
@@ -40,7 +40,9 @@ class RaceAdmin(admin.ModelAdmin):
     search_fields = ['name',]
 
 
-admin.site.register(City)
 admin.site.register(Address)
-admin.site.register(Runner, RunnerAdmin)
+admin.site.register(City)
+admin.site.register(Club)
+admin.site.register(Membership)
 admin.site.register(Race, RaceAdmin)
+admin.site.register(Runner, RunnerAdmin)

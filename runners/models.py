@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 ########################################################################
 # Copyright (c) 2011 by Vinny Murphy
 # Permission is hereby granted, free of charge, to any person
@@ -26,8 +29,13 @@ from django.contrib.localflavor.us.us_states import STATE_CHOICES
 from django.contrib.localflavor.us.models import PhoneNumberField
 from datetime import date
 
+import csv
+import os
+
+
 class City(models.Model):
-  '''City class: descriptive model of where a city/town exists.
+
+    '''City class: descriptive model of where a city/town exists.
 
   Attributes:
   city -- the city or town which a person lives.
@@ -42,112 +50,154 @@ class City(models.Model):
   look it up and then update the csv file.
 
   '''
-  city = models.CharField('City', max_length=40)
-  state = models.CharField('State', max_length=2, choices=STATE_CHOICES,
-                           default='MA')
-  zipcode = models.CharField('ZIP Code', max_length=5,
-                             blank=True, unique=True)
-  latitude = models.DecimalField(max_digits=9, decimal_places=6,
-                                 editable=False, default=0, blank=True)
-  longitude = models.DecimalField(max_digits=9, decimal_places=6,
-                                  editable=False, default=0, blank=True)
 
-  class Meta:
-    db_table = 'club_city'
-    ordering = ('zipcode',)
-    verbose_name_plural = 'Cities'
+    city = models.CharField('City', max_length=40)
+    state = models.CharField('State', max_length=2,
+                             choices=STATE_CHOICES, default='MA')
+    zipcode = models.CharField('ZIP Code', max_length=5, blank=True,
+                               unique=True)
+    latitude = models.DecimalField(max_digits=9, decimal_places=6,
+                                   editable=False, default=0,
+                                   blank=True)
+    longitude = models.DecimalField(max_digits=9, decimal_places=6,
+                                    editable=False, default=0,
+                                    blank=True)
 
-  def __unicode__(self):
-    return "%s, %s %s" % ( self.city, self.state, self.zipcode )
 
-  def save(self, **kwargs):
-    '''
+    class Meta:
+
+        '''override default django values'''
+
+        db_table = 'club_city'
+        ordering = ('zipcode', )
+        verbose_name_plural = 'Cities'
+
+
+    def __unicode__(self):
+        return '%s, %s %s' % (self.city, self.state, self.zipcode)
+
+    def save(self, **kwargs):
+        '''
     There is a file called zipcode.csv that has the list of zipcodes
     throughout the country. Grab that and check to see if we have the
     longitude/latitude in it before we save off the object.
     '''
-    if self.longitude == 0 and self.latitude == 0:
-      import csv, os
-      csv_file = os.path.join(os.path.dirname(__file__), 'zipcode.csv')
-      reader = csv.reader(open(csv_file, 'rb'))
-      for row in reader:
-        if row and row[0].count(self.zipcode):
-          self.longitude = row[4]
-          self.latitude  = row[3]
-          ## override any of the city/states to what we have in this
-          ## file:
-          self.city      = row[1]
-          self.state     = row[2]
-    super(City, self).save(**kwargs)
 
-  
+        if self.longitude == 0 and self.latitude == 0:
+            csv_file = os.path.join(os.path.dirname(__file__),
+                                    'zipcode.csv')
+            reader = csv.reader(open(csv_file, 'rb'))
+            for row in reader:
+                if row and row[0].count(self.zipcode):
+                    self.longitude = row[4]
+                    self.latitude = row[3]
+                    self.city = row[1]
+                    self.state = row[2]
+        super(City, self).save(**kwargs)
+
+
 class Address(models.Model):
-  number = models.CharField('Number', max_length=30, blank=True,
-                            null=True)
-  street = models.CharField('Address', max_length=40, blank=True,
-                            null=True)
-  city = models.ForeignKey(City)
 
-  def __unicode__(self):
-    return "%s %s, %s %s" % (self.number, self.street,
-                             self.city.city, self.city.state)
+    '''street address along with the city'''
 
-  class Meta:
-    db_table = 'club_address'
-    verbose_name_plural = 'Addresses'
+    number = models.CharField('Number', max_length=30, blank=True,
+                              null=True)
+    street = models.CharField('Address', max_length=40, blank=True,
+                              null=True)
+    city = models.ForeignKey(City)
+
+    def __unicode__(self):
+        return '%s %s, %s %s' % (self.number, self.street,
+                                 self.city.city, self.city.state)
+
+
+    class Meta:
+
+        db_table = 'club_address'
+        verbose_name_plural = 'Addresses'
+
 
 class Runner(models.Model):
-  GENDER_CHOICES = (
-    ('M', 'Male'),
-    ('F', 'Female'),
-    )
-  first_name = models.CharField('First name', max_length=50)
-  nickname = models.CharField('Nickname', max_length=50,
-                                  blank=True, null=True)
-  sur_name = models.CharField('Last name', max_length=50)
-  maiden_name = models.CharField('Maiden name', max_length=50,
+
+    '''runner information'''
+
+    GENDER_CHOICES = (('M', 'Male'), ('F', 'Female'))
+    first_name = models.CharField('First name', max_length=50)
+    nickname = models.CharField('Nickname', max_length=50, blank=True,
+                                null=True)
+    sur_name = models.CharField('Last name', max_length=50)
+    maiden_name = models.CharField('Maiden name', max_length=50,
                                    blank=True, null=True)
-  address = models.ForeignKey(Address)
-  email = models.EmailField()
-  phone = PhoneNumberField('Home Phone', blank=True)
-  mobile = PhoneNumberField('Mobile Phone', blank=True)
-  dob = models.DateField()
-  date_created = models.DateField(editable=False)
-  date_modified = models.DateField(editable=False)
-  gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
+    address = models.ForeignKey(Address)
+    email = models.EmailField()
+    phone = PhoneNumberField('Home Phone', blank=True)
+    mobile = PhoneNumberField('Mobile Phone', blank=True)
+    dob = models.DateField()
+    date_created = models.DateField(editable=False)
+    date_modified = models.DateField(editable=False)
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
 
-  class Meta:
-    db_table = 'club_runner'
-    ordering = ('sur_name', 'first_name')
-    unique_together   = ('first_name', 'sur_name', 'dob')
 
-  def __unicode__(self):
-    return "%s %s" % ( self.first_name, self.sur_name)
+    class Meta:
 
-  def save(self, **kwargs):
-    if self.date_created == None:
-      self.date_created = date.today()
-    self.date_modified = date.today()
-    super(Runner, self).save(**kwargs)
+        db_table = 'club_runner'
+        ordering = ('sur_name', 'first_name')
+        unique_together = ('first_name', 'sur_name', 'dob')
 
-  def age(self):
-    today = date.today()
-    try:
-      bday = self.dob.replace(year=today.year)
-    except ValueError:
-      bday = self.dob.replace(year=today.year, day=self.dob.day-1)
-    if bday > today:
-      return today.year - self.dob.year - 1
-    else:
-      return today.year - self.dob.year
+
+    def __unicode__(self):
+        return '%s %s' % (self.first_name, self.sur_name)
+
+    def save(self, **kwargs):
+        if self.date_created == None:
+            self.date_created = date.today()
+        self.date_modified = date.today()
+        super(Runner, self).save(**kwargs)
+
+    def age(self):
+        today = date.today()
+        try:
+            bday = self.dob.replace(year=today.year)
+        except ValueError:
+            bday = self.dob.replace(year=today.year, day=self.dob.day
+                                    - 1)
+        if bday > today:
+            return today.year - self.dob.year - 1
+        else:
+            return today.year - self.dob.year
 
 
 class Club(models.Model):
-  name = models.CharField('Club name', max_length=120)
-  url  = models.URLField()
 
-  class Meta:
-    db_table = 'clubs'
-  def __unicode__(self):
-    return self.name
-  
+    '''club membership information'''
+
+    name = models.CharField('Club name', max_length=120)
+    url = models.URLField()
+
+
+    class Meta:
+
+        db_table = 'clubs'
+
+
+    def __unicode__(self):
+        return self.name
+
+
+class Membership(models.Model):
+
+    '''track the members in a club and when their membership is due to
+    expire'''
+
+    club = models.ForeignKey('Club')
+    runner = models.ForeignKey('Runner')
+    expiration = models.DateField()
+
+    class Meta:
+
+        unique_together = (('club', 'runner'),)
+        ordering = ('expiration',)
+
+
+    def __unicode__(self):
+        return '%s %s' % (self.runner, self.club.name)

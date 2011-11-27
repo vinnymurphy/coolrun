@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 ########################################################################
 # Copyright (c) 2011 by Vinny Murphy
 # Permission is hereby granted, free of charge, to any person
@@ -29,44 +31,46 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from pprint import pprint
 
-from coolrun.runners.forms  import RunnerForm
-from coolrun.runners.forms  import RaceForm
-from coolrun.runners.forms  import CityForm
+from coolrun.runners.forms import RunnerForm
+from coolrun.runners.forms import RaceForm
+from coolrun.runners.forms import CityForm
 from coolrun.runners.models import Runner
 from coolrun.runners.models import City
+
 
 def birthday_month(request, mm):
     '''We sort the list by day number instead of date sort, which
     gives the oldest person first.  The trick is to create the day
     first, then the object, sort it, and then put the object back in
     day order.'''
+
     bdays = Runner.objects.all().filter(dob__month=mm)
     people_by_day = [(person.dob.day, person) for person in bdays]
     people_by_day.sort()
-    p = [ person_by_day[1] for person_by_day in people_by_day ]
-    return render_to_response('runners/birthday.html',
-                              {'bdays': p})
+    p = [person_by_day[1] for person_by_day in people_by_day]
+    return render_to_response('runners/birthday.html', {'bdays': p})
+
 
 def runners(request):
     runners_list = Runner.objects.all().order_by('sur_name',
-                                                 'first_name')
-    runners_context = {
-      'runners_list': runners_list
-    }
-    return render_to_response('runners/index.html', runners_context,)
+            'first_name')
+    runners_context = {'runners_list': runners_list}
+    return render_to_response('runners/index.html', runners_context)
+
 
 def runner(request, runner_id):
     try:
         m = Runner.objects.get(pk=runner_id)
     except Runner.DoesNotExist:
         raise Http404
-    return render_to_response('runners/detail.html',
-                              {'runner': m})
+    return render_to_response('runners/detail.html', {'runner': m})
+
 
 def cities(request):
     cities_list = City.objects.all().order_by('zipcode')
-    return render_to_response('cities/index.html',
-                              {'cities_list' : cities_list })
+    return render_to_response('cities/index.html', {'cities_list'
+                              : cities_list})
+
 
 def city(request, city_id):
     try:
@@ -74,6 +78,7 @@ def city(request, city_id):
     except City.DoesNotExist:
         raise Http404
     return render_to_response('cities/detail.html', {'city': c})
+
 
 def create(request):
     form = RunnerForm(request.POST or None)
@@ -86,9 +91,9 @@ def create(request):
             next = reverse('runner_create')
         return HttpResponseRedirect(next)
 
-    return render_to_response( 'runners/create.html',
-                               { 'form': form},
-                               context_instance = RequestContext(request),)
+    return render_to_response('runners/create.html', {'form': form},
+                              context_instance=RequestContext(request))
+
 
 def race_create(request):
     form = RaceForm(request.POST or None)
@@ -100,11 +105,10 @@ def race_create(request):
         else:
             next = reverse('runner_create')
         return HttpResponseRedirect(next)
-    return render_to_response(
-      'runners/race_create.html',
-      { 'form': form},
-      context_instance = RequestContext(request),
-      )
+    return render_to_response('runners/race_create.html', {'form'
+                              : form},
+                              context_instance=RequestContext(request))
+
 
 def city_create(request):
     form = CityForm(request.POST or None)
@@ -118,11 +122,10 @@ def city_create(request):
             next = reverse('city_creation')
         return HttpResponseRedirect(next)
 
-    return render_to_response(
-      'runners/city_create.html',
-      { 'form': form},
-      context_instance = RequestContext(request),
-    )
+    return render_to_response('runners/city_create.html', {'form'
+                              : form},
+                              context_instance=RequestContext(request))
+
 
 def runners_search(request):
     error = False
@@ -133,8 +136,9 @@ def runners_search(request):
         else:
             runners = Runner.objects.filter(first_name__icontains=q)
             return render_to_response('runners/search_result.html',
-                                      { 'runners': runners,
-                                        'q': q})
+                    {'runners': runners, 'q': q})
     else:
-        return render_to_response('runners/search_form.html',
-                                  {'error': True})
+        return render_to_response('runners/search_form.html', {'error'
+                                  : True})
+
+

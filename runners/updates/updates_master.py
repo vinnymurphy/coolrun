@@ -34,14 +34,15 @@ os.environ['DJANGO_SETTINGS_MODULE'] = 'coolrun.settings'
 
 from coolrun.runners.models import City, Address
 from coolrun.runners.models import Runner
-from datetime import datetime
+from coolrun.runners.models import Membership, Club
+from datetime import datetime, date
 
 this_dir = os.path.dirname(__file__)
 
 # grab the csv file and put it into the database.
 update = os.path.join(this_dir, 'latest.csv')
 fh_reader = csv.DictReader(open(update))
-
+GNBTC = Club.objects.filter(name='GNBTC')
 ## Grab the values out of the spreadsheet.  The values we have for the
 ## columns are:
 ## id,firstname,MI,lastname,suffix,street_#,street,city,state,zip,
@@ -70,9 +71,11 @@ for row in fh_reader:
              'mobile': row['mobilephone'],
              'address': addr_obj,
              'email': row['email'],}
-    runner = Runner.objects.filter(**filter_attrs).update(**attrs)
-    if not runner:
-        print 'adding %s %s to the database' % (row['firstname'],
-                                                row['lastname'])
-        attrs.update(filter_attrs)
-        obj = Runner.objects.create(**attrs)
+#    runner = Runner.objects.filter(**filter_attrs).update(**attrs)
+    expiration = date(year=int(row['Exp']), month=12, day=31)
+    print expiration
+    # if not runner:
+    #     print 'adding %s %s to the database' % (row['firstname'],
+    #                                             row['lastname'])
+    #     attrs.update(filter_attrs)
+    #     obj = Runner.objects.create(**attrs)
