@@ -39,10 +39,13 @@ class RaceAdmin(admin.ModelAdmin):
     ordering = ['-date',]
     search_fields = ['name',]
 
+class MembershipAdmin(admin.ModelAdmin):
+    list_display = ['club', 'runner', 'expiration']
+    ordering = ('-expiration',)
 
 admin.site.register(Address)
 admin.site.register(City)
 admin.site.register(Club)
-admin.site.register(Membership)
+admin.site.register(Membership, MembershipAdmin)
 admin.site.register(Race, RaceAdmin)
 admin.site.register(Runner, RunnerAdmin)
