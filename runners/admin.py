@@ -29,7 +29,7 @@ from race.models import Race
 class RunnerAdmin(admin.ModelAdmin):
     list_display = ['first_name', 'sur_name', 'maiden_name',
                     'address', 'email', 'phone', 'mobile',
-                    'dob']
+                    'dob', 'id']
     ordering = ['sur_name', 'first_name', 'dob',]
     search_fields = ['first_name', 'sur_name', ]
 

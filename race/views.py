@@ -21,6 +21,7 @@
 # SOFTWARE.
 ########################################################################
 import csv
+import calendar
 
 from coolrun.race.models import Race, Result
 from datetime import date, datetime
@@ -31,6 +32,7 @@ from django.template import RequestContext
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseRedirect
 from itertools import groupby
+from pprint import pprint
 
 AGE_GROUPS = ((0,19),(20,29),(30,39),(40,49),
               (50,59), (60,99))
@@ -182,6 +184,11 @@ def gran_prix(request, yyyy):
 
 def yyyyresults(request, yyyy):
     races = Race.objects.all().filter(date__year=yyyy).order_by('-date')
+    field = lambda race: race.date
+    cal = [(day, list(items)) for day, items in groupby(races, field)]
+    cal.sort(reverse=True)
+
     return render_to_response('results/yyyy_mm.html',
-                              { 'races': races})
+                              { 'races': races,
+                                'calendar': cal})
         
