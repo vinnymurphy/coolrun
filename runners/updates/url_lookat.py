@@ -83,14 +83,45 @@ else:
 
 if from_date:
     all_runners = Runner.objects.filter(Q(date_created__gte=from_date))
-#            | Q(date_modified__gte=from_date))
 else:
+
+#            | Q(date_modified__gte=from_date))
+
     all_runners = Runner.objects.all()
 
 tmp_directory = '%s/%s' % (tempfile.gettempdir(),
                            date.today().strftime('%Y%m%d'))
 if not os.path.exists(tmp_directory):
     os.makedirs(tmp_directory)
+
+
+def guess_place_and_time(filename, line):
+    '''determine where the place in the race is by looking for just a
+    number on the line all by itself.  Most likely the runnners place
+    is at the beginning of the line but offer up the start and end of
+    anything that looks like a place.  The time is deterimined simply
+    by looking for some form of 1:30:20 or 12:25.'''
+
+    places = []
+    times = []
+    for m in re.finditer(r'\b\d+\b(?=\s)', line):
+        places.append((m.start(), m.end()))
+    for m in re.finditer(r'\b\d+:\d+(?::\d+)?\.?\b', line):
+        times.append((m.start(), m.end()))
+    if places:
+        filename.write('place = ')
+        for place in places:
+            filename.write('%s,%s ' % (place[0], place[1]))
+        filename.write('\n')
+    else:
+        filename.write('place = 0,10\n')
+    if times:
+        filename.write('time = ')
+        for t in times:
+            filename.write('%s,%s ' % (t[0], t[1]))
+        filename.write('\n')
+    else:
+        filename.write('time = 0,10\n')
 
 
 def guess_distance(race_title):
@@ -256,9 +287,11 @@ for url in urls:
     race_date = None
     ascii = os.popen('lynx --dump -width=200 -nolist ' + url).read()
     (race_name, race_place, race_date) = race_meta_data(url)
+    last_line = None
     for line in ascii.split('\n'):
         nFinished = nFinishRegx.search(line)
         if nFinished:
+            last_line = line
             nFinishers = nFinished.group(1)
 
         keepGoing = True
@@ -312,8 +345,7 @@ for url in urls:
                 raceinfo.city.state))
         f.write('measure = %s\n' % raceinfo.measure)
         f.write('name = "%s"\n' % raceinfo.name)
-        f.write('place = 0, 10\n')
-        f.write('time = 0, 10\n')
+        guess_place_and_time(f, last_line)
         f.write('url = %s\n' % raceinfo.url)
     else:
         if race_date is None:
@@ -333,7 +365,6 @@ for url in urls:
         else:
             f.write('measure = M|K\n')
         f.write('name = "%s"\n' % race_name)
-        f.write('place = 0, 10\n')
-        f.write('time = 0, 10\n')
+        guess_place_and_time(f, last_line)
         f.write('url = %s\n' % url)
     print output
