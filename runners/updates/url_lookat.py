@@ -82,7 +82,7 @@ else:
     from_date = None
 
 if from_date:
-    all_runners = Runner.objects.filter(Q(date_created__gte=from_date))
+    all_runners = Runner.objects.filter(Q(date_modified__gte=from_date))
 else:
 
 #            | Q(date_modified__gte=from_date))
@@ -131,9 +131,9 @@ def guess_distance(race_title):
     rv_distance_measure = (None, None)
     half_re = re.compile(r'(?:1/2|half)', re.IGNORECASE)
     marathon_re = re.compile(r'marathon', re.IGNORECASE)
-    kilometer_re = re.compile(r'.*(\d+(?:\.\d+)?)\s*(?:K|kilometers?)\b'
+    kilometer_re = re.compile(r'.*\D(\d+(?:\.\d+)?)\s*(?:K|kilometers?)'
                               , re.IGNORECASE)
-    mile_re = re.compile(r'.*(\d+(?:\.\d+)?)\s*(?:M|mile(?:s|r)?)\b',
+    mile_re = re.compile(r'.*\D(\d+(?:\.\d+)?)\s*(?:M|mile(?:s|r)?)',
                          re.IGNORECASE)
 
     if marathon_re.search(race_title):
