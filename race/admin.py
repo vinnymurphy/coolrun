@@ -32,11 +32,18 @@ make_published.short_description = "Mark selected runners as published in newsle
 def name_race(self):
     return self.race.name
 
+def date_race(self):
+    return self.race.date
+
+def url_race(self):
+    return self.race.url
+
 class ResultAdmin(admin.ModelAdmin):
-    list_display = ['race', 'runner', 'place', 'race_time',
-                    'race_seconds', 'pace_per_mile', 'in_newsletter']
-    ordering = ['-race',]
-    search_fields = ['runner',]
+    list_display = [name_race, date_race, url_race, 'runner',
+                    'place', 'race_time', 'in_newsletter']
+    ordering = ['-race__date',]
+    search_fields = ['runner__first_name', 'runner__sur_name',
+                     'race__name']
     actions = [make_published]
 
 admin.site.register(Result, ResultAdmin)

@@ -104,15 +104,18 @@ def guess_place_and_time(filename, line):
 
     places = []
     times = []
-    for m in re.finditer(r'\b\d+\b(?=\s)', line):
-        places.append((m.start(), m.end()))
-    for m in re.finditer(r'\b\d+:\d+(?::\d+)?\.?\b', line):
-        times.append((m.start(), m.end()))
-    if places:
-        filename.write('place = ')
-        for place in places:
-            filename.write('%s,%s ' % (place[0], place[1]))
-        filename.write('\n')
+    if line:
+        for m in re.finditer(r'\b\d+\b(?=\s)', line):
+            places.append((m.start(), m.end()))
+        for m in re.finditer(r'\b\d+:\d+(?::\d+)?\.?\b', line):
+            times.append((m.start(), m.end()))
+        if places:
+            filename.write('place = ')
+            for place in places:
+                filename.write('%s,%s ' % (place[0], place[1]))
+            filename.write('\n')
+        else:
+            filename.write('place = 0,10\n')
     else:
         filename.write('place = 0,10\n')
     if times:
@@ -185,7 +188,6 @@ def name_regx(runners):
     fn_ln_regx = r'(?:' + '|'.join(fn_ln_regx) + r')'
     filn_regx = re.compile(r'(?P<fnln>%s)' % fi_ln_regx, re.IGNORECASE)
     fnln_regx = re.compile(r'(?P<fnln>%s)' % fn_ln_regx, re.IGNORECASE)
-
     return (filn_regx, fnln_regx)
 
 
