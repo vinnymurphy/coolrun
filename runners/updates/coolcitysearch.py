@@ -83,7 +83,7 @@ SELECT DISTINCT(city) FROM club_address
                     city[city_name] += 1
                 else:
                     city[city_name] = 1
-    excludes = ['east', 'south', 'north', 'west']
+    excludes = ['east', 'south', 'north', 'west', 'city']
     return list(set(city.keys()) - set(excludes))
 
 

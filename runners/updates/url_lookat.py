@@ -28,35 +28,34 @@
 web page. The output is sent to a temp file so that you can edit and
 then when you are done run the results.py script.'''
 
-import itertools
+
 import os
 import re
 import sys
-import tempfile
-import urllib
 
-top_dir = \
+from argparse import ArgumentParser
+from itertools import permutations
+from tempfile import gettempdir
+from urllib import urlopen
+
+Debug = False
+
+if Debug:
+    from pprint import pprint
+
+TOP_DIR = \
     os.path.abspath(os.path.join(os.path.dirname(os.path.dirname(__file__)),
                     '..', '..', '..'))
-sys.path.insert(0, top_dir)
+sys.path.insert(0, TOP_DIR)
 os.environ['DJANGO_SETTINGS_MODULE'] = 'coolrun.settings'
 
-from coolrun.runners.models import Runner
 from coolrun.race.models import Race
+from coolrun.runners.models import Runner
 from datetime import date
-from dateutil import parser
-
-# from pprint import pprint
-
+from dateutil import parser as duparser
 from django.db.models import Q
 from django.forms.models import model_to_dict
 
-if len(sys.argv) < 2:
-    sys.stderr.write('Usage: %s <url> [date]\n' % sys.argv[0])
-    sys.exit(1)
-
-urls = []
-urls.append(sys.argv[1])
 
 
 def _strip_initial(name):
@@ -65,35 +64,6 @@ def _strip_initial(name):
         if name_match:
             name = name_match.group(1)
     return name
-
-
-if len(sys.argv) > 2:
-    from_date = parser.parse(sys.argv[2]).date()
-
-    # June 1st is suppose to be the cutoff for updating the gran prix.
-    # Todo: * figure out algorithm to do June 1st.
-    #       * figure out how we would do the new year.
-
-    races = [u.url for u in Race.objects.filter(date__year=2012,
-             gran_prix='N')]
-
-    urls += races
-else:
-    from_date = None
-
-if from_date:
-    all_runners = Runner.objects.filter(Q(date_modified__gte=from_date))
-else:
-
-#            | Q(date_modified__gte=from_date))
-
-    all_runners = Runner.objects.all()
-
-tmp_directory = '%s/%s' % (tempfile.gettempdir(),
-                           date.today().strftime('%Y%m%d'))
-if not os.path.exists(tmp_directory):
-    os.makedirs(tmp_directory)
-
 
 def guess_place_and_time(filename, line):
     '''determine where the place in the race is by looking for just a
@@ -195,7 +165,7 @@ def race_meta_data(url):
     '''return race name, place and date'''
 
     (rname, rplace, rdate) = ('', '', '')
-    for line in urllib.urlopen(url).readlines():
+    for line in urlopen(url).readlines():
         m_race_name = re.match('<h1>(.*?)</h1>', line)
         if m_race_name:
             rname = m_race_name.group(1)
@@ -203,170 +173,206 @@ def race_meta_data(url):
         if m_h2:
             h2 = m_h2.group(1)
             rplace = h2
-            rdate = parser.parse(h2, fuzzy=True).date()
+            rdate = duparser.parse(h2, fuzzy=True).date()
     return (rname, rplace, rdate)
 
 
-for url in urls:
-    output = '%s/%s' % (tmp_directory, url.split('/')[-1:][0])
-    try:
-        f = open(output, 'w')
-    except:
-        next
+def main(args):
+    from_date = None
+    if args.date:
+        from_date = duparser.parse(args.date)
 
-    (filn_regx, fnln_regx) = name_regx(all_runners)
-    race_name = ''
-    race_place = ''
-    f.write("results='''\n")
+    urls = args.urls
+    if from_date:
+        urls += [u.url for u in
+                 Race.objects.filter(date__year=2012,
+                                     gran_prix='N')]
+        all_runners = Runner.objects.filter(Q(
+                date_modified__gte=from_date))
+    else:
+        all_runners = Runner.objects.all()
+
+    if Debug:
+        pprint(urls)
+
+    tmp_directory = '%s/%s' % (gettempdir(),
+                               date.today().strftime('%Y%m%d'))
+    if not os.path.exists(tmp_directory):
+        os.makedirs(tmp_directory)
+    for url in urls:
+        output = '%s/%s' % (tmp_directory, url.split('/')[-1:][0])
+        try:
+            f = open(output, 'w')
+        except:
+            next
+
+        (filn_regx, fnln_regx) = name_regx(all_runners)
+        race_name = ''
+        race_place = ''
+        f.write("results='''\n")
 
 
-    def get_athlete_object(fnln, first_initial=False):
-        '''return the object id of the athlete'''
+        def get_athlete_object(fnln, first_initial=False):
+            '''return the object id of the athlete'''
 
-        def _ath_obj(fname, lname):
-            '''return exact match object id(s)'''
+            def _ath_obj(fname, lname):
+                '''return exact match object id(s)'''
 
-            fname = _strip_initial(fname)
-            lname = _strip_initial(lname)
-            athlete_obj = Runner.objects.filter(sur_name__iexact='%s'
-                    % lname.strip(','), first_name__iexact='%s'
-                    % fname.strip(','))
-            return athlete_obj
+                fname = _strip_initial(fname)
+                lname = _strip_initial(lname)
+                athlete_obj = Runner.objects.filter(sur_name__iexact='%s'
+                        % lname.strip(','), first_name__iexact='%s'
+                        % fname.strip(','))
+                return athlete_obj
 
-        def _ath_fi_obj(fname, lname):
-            '''return near match object id(s)'''
+            def _ath_fi_obj(fname, lname):
+                '''return near match object id(s)'''
 
-            fname = _strip_initial(fname)
-            lname = _strip_initial(lname)
-            athlete_obj = Runner.objects.filter(sur_name__iexact='%s'
-                    % lname.strip(','), first_name__istartswith='%s'
-                    % fname[:1])
+                fname = _strip_initial(fname)
+                lname = _strip_initial(lname)
+                athlete_obj = Runner.objects.filter(sur_name__iexact='%s'
+                        % lname.strip(','), first_name__istartswith='%s'
+                        % fname[:1])
 
-            return athlete_obj
+                return athlete_obj
 
-        a_name = fnln.split()
-        if len(a_name) > 2:
+            a_name = fnln.split()
+            if len(a_name) > 2:
 
-            # # The firstname or lastname has a space in it so we split
-            # # it up into the permutations and then run it through the
-            # # object finder.
+                # # The firstname or lastname has a space in it so we split
+                # # it up into the permutations and then run it through the
+                # # object finder.
 
-            perms = list(itertools.permutations(a_name))
-            for perm in perms:
-                (fname, lname) = (' '.join(perm[2:]),
-                                  ' '.join(perm[:2]))
-                perm_obj = _ath_obj(fname, lname)
-                if perm_obj:
-                    return perm_obj
-            for perm in perms:
-                (fname, lname) = (' '.join(perm[2:]),
-                                  ' '.join(perm[:2]))
-                perm_obj = _ath_fi_obj(fname, lname)
-                if perm_obj:
-                    return perm_obj
-        else:
-            (fname, lname) = fnln.split(None, 1)
-
-        if first_initial:
-            athlete_obj = _ath_fi_obj(fname, lname)
-        else:
-            athlete_obj = _ath_obj(fname, lname)
-        if athlete_obj:
-            return athlete_obj
-        else:
-            if first_initial:
-                athlete_obj = _ath_fi_obj(lname, fname)
+                perms = list(permutations(a_name))
+                for perm in perms:
+                    (fname, lname) = (' '.join(perm[2:]),
+                                      ' '.join(perm[:2]))
+                    perm_obj = _ath_obj(fname, lname)
+                    if perm_obj:
+                        return perm_obj
+                for perm in perms:
+                    (fname, lname) = (' '.join(perm[2:]),
+                                      ' '.join(perm[:2]))
+                    perm_obj = _ath_fi_obj(fname, lname)
+                    if perm_obj:
+                        return perm_obj
             else:
-                athlete_obj = _ath_obj(lname, fname)
+                (fname, lname) = fnln.split(None, 1)
+
+            if first_initial:
+                athlete_obj = _ath_fi_obj(fname, lname)
+            else:
+                athlete_obj = _ath_obj(fname, lname)
             if athlete_obj:
                 return athlete_obj
             else:
-                print "Warning: can't find %s %s" % (fname, lname)
+                if first_initial:
+                    athlete_obj = _ath_fi_obj(lname, fname)
+                else:
+                    athlete_obj = _ath_obj(lname, fname)
+                if athlete_obj:
+                    return athlete_obj
+                else:
+                    print "Warning: can't find %s %s" % (fname, lname)
 
 
-    nFinishers = 0
-    nFinishRegx = re.compile(r'^\s*(\d+)\s+')
-    race_date = None
-    ascii = os.popen('lynx --dump -width=200 -nolist ' + url).read()
-    (race_name, race_place, race_date) = race_meta_data(url)
-    last_line = None
-    for line in ascii.split('\n'):
-        nFinished = nFinishRegx.search(line)
-        if nFinished:
-            last_line = line
-            nFinishers = nFinished.group(1)
+        nFinishers = 0
+        nFinishRegx = re.compile(r'^\s*(\d+)\s+')
+        race_date = None
+        ascii = os.popen('lynx --dump -width=200 -nolist ' + url).read()
+        (race_name, race_place, race_date) = race_meta_data(url)
+        last_line = None
+        for line in ascii.split('\n'):
+            nFinished = nFinishRegx.search(line)
+            if nFinished:
+                last_line = line
+                nFinishers = nFinished.group(1)
 
-        keepGoing = True
-        attempt1 = fnln_regx.search(line)
-        if attempt1:
-            obj = get_athlete_object(attempt1.group('fnln'))
-            if obj:
-                f.write(line)
-                for athlete in obj:
-                    f.write('id:%s' % athlete.id)
-                f.write('\n')
-            else:
-
-                # # should NOT get here so it is a wtf moment. :-(
-
-                print 'wtf!',
-                print 'okay, we can not get corresponding object id for',
-                print '%s' % attempt1.group('fnln')
-                print line
-            keepGoing = False
-
-        if keepGoing:
-            attempt2 = filn_regx.search(line)
-            if attempt2:
-                (fn, ln) = attempt2.group('fnln').split(None, 1)
-                obj = get_athlete_object(attempt2.group('fnln'),
-                        first_initial=True)
-
-                # could it be one of the following ids?:
-
+            keepGoing = True
+            attempt1 = fnln_regx.search(line)
+            if attempt1:
+                obj = get_athlete_object(attempt1.group('fnln'))
                 if obj:
                     f.write(line)
                     for athlete in obj:
-                        f.write('%s %s- id:%s ' % (athlete.first_name,
-                                athlete.sur_name, athlete.id))
+                        f.write('id:%s' % athlete.id)
                     f.write('\n')
-    f.write("'''\n")
+                else:
 
-    raceinfo = None
-    try:
-        raceinfo = Race.objects.filter(url=url)[0]
-    except:
-        pass
+                    # # should NOT get here so it is a wtf moment. :-(
 
-    if raceinfo:
-        f.write('date = %s\n' % raceinfo.date)
-        f.write('distance = %s\n' % raceinfo.distance)
-        f.write('finishers = %s\n' % raceinfo.finishers)
-        f.write('gran_prix  = %s\n' % raceinfo.gran_prix)
-        f.write('location = "%s, %s"\n' % (raceinfo.city.city,
-                raceinfo.city.state))
-        f.write('measure = %s\n' % raceinfo.measure)
-        f.write('name = "%s"\n' % raceinfo.name)
-        guess_place_and_time(f, last_line)
-        f.write('url = %s\n' % raceinfo.url)
-    else:
-        if race_date is None:
-            f.write('date = \n')
+                    print 'wtf!',
+                    print 'okay, we can not get corresponding object id for',
+                    print '%s' % attempt1.group('fnln')
+                    print line
+                keepGoing = False
+
+            if keepGoing:
+                attempt2 = filn_regx.search(line)
+                if attempt2:
+                    (fn, ln) = attempt2.group('fnln').split(None, 1)
+                    obj = get_athlete_object(attempt2.group('fnln'),
+                            first_initial=True)
+
+                    # could it be one of the following ids?:
+
+                    if obj:
+                        f.write(line)
+                        for athlete in obj:
+                            f.write('%s %s- id:%s ' % (athlete.first_name,
+                                    athlete.sur_name, athlete.id))
+                        f.write('\n')
+        f.write("'''\n")
+
+        raceinfo = None
+        try:
+            raceinfo = Race.objects.filter(url=url)[0]
+        except:
+            pass
+
+        if raceinfo:
+            f.write('date = %s\n' % raceinfo.date)
+            f.write('distance = %s\n' % raceinfo.distance)
+            f.write('finishers = %s\n' % raceinfo.finishers)
+            f.write('gran_prix  = %s\n' % raceinfo.gran_prix)
+            f.write('location = "%s, %s"\n' % (raceinfo.city.city,
+                    raceinfo.city.state))
+            f.write('measure = %s\n' % raceinfo.measure)
+            f.write('name = "%s"\n' % raceinfo.name)
+            guess_place_and_time(f, last_line)
+            f.write('url = %s\n' % raceinfo.url)
         else:
-            f.write('date = %s\n' % race_date)
-        (dist, measure) = guess_distance(race_name)
-        if dist:
-            f.write('distance = %s\n' % dist)
-        else:
-            f.write('distance = 5\n')
-        f.write('finishers = %s\n' % nFinishers)
-        f.write('gran_prix  = N\n')
-        f.write('location = "%s"\n' % race_place)
-        if measure:
-            f.write('measure = %s\n' % measure)
-        else:
-            f.write('measure = M|K\n')
-        f.write('name = "%s"\n' % race_name)
-        guess_place_and_time(f, last_line)
-        f.write('url = %s\n' % url)
-    print output
+            if race_date is None:
+                f.write('date = \n')
+            else:
+                f.write('date = %s\n' % race_date)
+            (dist, measure) = guess_distance(race_name)
+            if dist:
+                f.write('distance = %s\n' % dist)
+            else:
+                f.write('distance = 5\n')
+            f.write('finishers = %s\n' % nFinishers)
+            f.write('gran_prix  = N\n')
+            f.write('location = "%s"\n' % race_place)
+            if measure:
+                f.write('measure = %s\n' % measure)
+            else:
+                f.write('measure = M|K\n')
+            f.write('name = "%s"\n' % race_name)
+            guess_place_and_time(f, last_line)
+            f.write('url = %s\n' % url)
+        print 'Parsed file is at %s' % output
+    
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser()
+    parser.add_argument('--date', '-d',
+                        help='the date you want to go back to.',
+                        required=False)
+    parser.add_argument('--urls', '-u',
+                        help='The urls that you want to search',
+                        nargs='*', required=True)
+    args = parser.parse_args()
+    main(args)
+
