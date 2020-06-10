@@ -140,9 +140,7 @@ def put_cool_urls_in_db(urls, dbfile):
     db_urls = []
     for row in curs:
         db_urls.append((row[0], row[1]))
-    exclusive = list(set(urls).difference(set(db_urls)))
-
-    return exclusive
+    return list(set(urls).difference(set(db_urls)))
 
 
 def get_cool_urls_from_db(dbfile):
@@ -157,8 +155,7 @@ def get_cool_urls_from_db(dbfile):
     db_urls = []
     for row in curs:
         db_urls.append(row[0])
-    exclusive = set(db_urls)
-    return exclusive
+    return set(db_urls)
 
 
 def get_state_urls(existing_urls):
@@ -170,7 +167,7 @@ def get_state_urls(existing_urls):
     today = datetime.now()
     years = [int(today.strftime('%y'))]
 
-    if 1 == today.month:
+    if today.month == 1:
         years.append(int(today.strftime('%y')) - 1)
 
     urls = []
