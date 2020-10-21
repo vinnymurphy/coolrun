@@ -149,7 +149,7 @@ class Runner(models.Model):
         return '%s %s' % (self.first_name, self.sur_name)
 
     def save(self, **kwargs):
-        if self.date_created == None:
+        if self.date_created is None:
             self.date_created = date.today()
         self.date_modified = date.today()
         super(Runner, self).save(**kwargs)

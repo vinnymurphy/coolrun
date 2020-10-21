@@ -72,9 +72,9 @@ def guess_place_and_time(filename, line):
     anything that looks like a place.  The time is deterimined simply
     by looking for some form of 1:30:20 or 12:25.'''
 
-    places = []
     times = []
     if line:
+        places = []
         for m in re.finditer(r'\b\d+\b(?=\s)', line):
             places.append((m.start(), m.end()))
         for m in re.finditer(r'\b\d+:\d+(?::\d+)?\.?\b', line):
@@ -220,21 +220,18 @@ def main(args):
 
                 fname = _strip_initial(fname)
                 lname = _strip_initial(lname)
-                athlete_obj = Runner.objects.filter(sur_name__iexact='%s'
+                return Runner.objects.filter(sur_name__iexact='%s'
                         % lname.strip(','), first_name__iexact='%s'
                         % fname.strip(','))
-                return athlete_obj
 
             def _ath_fi_obj(fname, lname):
                 '''return near match object id(s)'''
 
                 fname = _strip_initial(fname)
                 lname = _strip_initial(lname)
-                athlete_obj = Runner.objects.filter(sur_name__iexact='%s'
+                return Runner.objects.filter(sur_name__iexact='%s'
                         % lname.strip(','), first_name__istartswith='%s'
                         % fname[:1])
-
-                return athlete_obj
 
             a_name = fnln.split()
             if len(a_name) > 2:

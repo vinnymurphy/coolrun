@@ -63,12 +63,12 @@ def topDistance(request, yyyy, numRunners=20):
                                   result.runner.dob)
         distance = float(result.race.distance)
         if result.race.measure == 'K':
-            distance = distance * kilometer
+            distance *= kilometer
         try:
             runnerDict[runnerKey].append(distance)
         except KeyError:
             runnerDict[runnerKey] = [distance]
-            
+
     for athlete in runnerDict:
         if athlete.startswith('M '):
             males.append((sum(runnerDict[athlete]), athlete[2:-11],
@@ -121,7 +121,7 @@ def gran_prix(request, yyyy):
     years day)'''
     year_end_date = date(int(yyyy)+1, 1, 1)
     runDict = {}
-    
+
     raceDict = {}
     raceids = [(r.date,r.id,r.name) for r in races]
     for ageMin, ageMax in AGE_GROUPS:
@@ -149,16 +149,14 @@ def gran_prix(request, yyyy):
                             'result': result.runner,
                             'time': result.race_time,
                             }]
-                            
+
     l = sorted(runDict, key=lambda x: (runDict[x][0]['gender'].lower(),
                                        runDict[x][0]['age']))
     raceids.sort()
     res = [['Name','Age Group', races]]
     for runid in l:
-        a = []
-        a.append(runDict[runid][0]['result'])
-        a.append('%s to %s' % ( runDict[runid][0]['ageMin'],
-                                runDict[runid][0]['ageMax']))
+        a = [runDict[runid][0]['result'], '%s to %s' % ( runDict[runid][0]['ageMin'],
+                                runDict[runid][0]['ageMax'])]
         z = [x['raceId'] for x in runDict[runid]]
         events = []
         for dt, rid, n in raceids:
@@ -178,7 +176,7 @@ def gran_prix(request, yyyy):
         for race in races:
             a.append(race)
         writer.writerow(a)
-    
+
     return response
     
 

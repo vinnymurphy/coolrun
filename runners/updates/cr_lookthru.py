@@ -74,7 +74,7 @@ result_regx = re.compile(r'.*<a href="(/results/\S+.shtml)">')
 states = ['ri', 'ma', 'nh', 'vt', 'ct']
 states.sort()
 coolrunning = 'http://coolrunning.com'
-results = dict()
+results = {}
 for state in states:
     page = '%s/results/11/%s.shtml' % (coolrunning, state)
     fh = urllib.urlopen(page)
@@ -94,11 +94,11 @@ for state in states:
             for line in urlfh.readlines():
                 m = fnln_regx.search(line[:-1])
                 if m:
-                    results[state_url] = results[state_url] + 1
+                    results[state_url] += 1
                 else:
                     m = filn_regx.search(line[:-1])
                     if m:
-                        results[state_url] = results[state_url] + 0.25
+                        results[state_url] += 0.25
 
 run_dict = sorted(results.items(), lambda x, y: cmp(x[1], y[1]), reverse=True)
 
